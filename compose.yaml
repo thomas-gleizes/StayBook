@@ -3,6 +3,7 @@ networks:
 
 volumes:
   kafka-volume:
+  zitadel_data:
 
 services:
   modules_user:
@@ -10,32 +11,48 @@ services:
     deploy:
       replicas: 1
     volumes:
-      - "./Kalat/StayBook/Modules/User:/usr/src/app"
+      - "./Kalat/Staybook/Modules/User:/usr/src/app"
     working_dir: "/usr/src/app"
-    command: pnpm start:debug
+    command: pnpm start:dev
     networks:
       staybook-net:
         aliases:
           - modules.user
-    environment:
-      NODE_ENV: production
-      LOG_LEVEL: warn
 
   system_gateway:
     build: .docker/node
     deploy:
       replicas: 1
     volumes:
-      - "./Kalat/StayBook/System/Gateway:/usr/src/app"
+      - "./Kalat/Staybook/System/Gateway:/usr/src/app"
     working_dir: "/usr/src/app"
+    command: pnpm start:dev
     networks:
       staybook-net:
         aliases:
           - system.gateway
-    environment:
-      NODE_ENV: development
-      PORT: 3000
-      LOG_LEVEL: warn
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.system_gateway.loadbalancer.server.port=3000"
+      - "traefik.http.routers.system_gateway.rule=Host(`gateway.staybook.localhost`)"
+      - "traefik.http.routers.system_gateway.entrypoints=web"
+
+  system_proxy:
+    image: traefik:latest
+    networks:
+      staybook-net:
+        aliases:
+          - kmotion-traefik
+    ports:
+      - "80:80"
+    volumes:
+      - ./.docker/traefik/traefik.toml:/etc/traefik/traefik.toml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.system_proxy.rule=Host(`traefik.staybook.localhost`)"
+      - "traefik.http.routers.system_proxy.entrypoints=web"
+      - "traefik.http.routers.system_proxy.service=api@internal"
 
   system_broker:
     image: apache/kafka:4.0.0
@@ -48,11 +65,11 @@ services:
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://localhost:9092,CONTROLLER://localhost:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://system.broker:9092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@system.broker:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -61,8 +78,6 @@ services:
 
   system_kafka_ui:
     image: provectuslabs/kafka-ui:latest
-    ports:
-      - "8080:8080"
     networks:
       staybook-net:
         aliases:
@@ -74,3 +89,8 @@ services:
       SERVER_SERVLET_CONTEXT_PATH: /
     depends_on:
       - system_broker
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.system_kafka_ui.loadbalancer.server.port=8080"
+      - "traefik.http.routers.system_kafka_ui.rule=Host(`kafka.staybook.localhost`)"
+      - "traefik.http.routers.system_kafka_ui.entrypoints=web"

@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConsoleLogger, LogLevel } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -28,7 +29,17 @@ async function bootstrap() {
     jsonDocumentUrl: '/openapi.json',
   });
 
-  app.connectMicroservice({});
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.KAFKA,
+    options: {
+      client: {
+        brokers: [], // ou votre broker Kafka
+      },
+      consumer: {
+        groupId: 'my-consumer-group',
+      },
+    },
+  });
 
   await app.listen(process.env.PORT ?? 3000);
 }

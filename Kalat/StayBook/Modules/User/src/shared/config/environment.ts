@@ -1,7 +1,12 @@
-import * as Joi from 'joi';
+import { z } from 'zod';
 
-export const environment = Joi.object({
-  NODE_ENV: Joi.string().valid('development', 'production', 'test', 'provision').default('development'),
-  LOG_LEVEL: Joi.string().valid('fatal', 'error', 'warn', 'log', 'debug', 'verbose').default('log'),
-  PORT: Joi.number().port().default(3000),
+export const environment = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test', 'provision']).default('development'),
+  LOG_LEVEL: z.string().default('log'),
+  KAFKA_BROKERS: z.string(),
+  KAFKA_CONSUMER: z.string(),
 });
+
+export function getEnvironment<Values = unknown>(values: Values) {
+  return environment.parse(values, {});
+}

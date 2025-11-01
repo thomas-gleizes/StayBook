@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { environment } from './shared/config/environment';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, validationSchema: environment })],
+  imports: [ConfigModule.forRoot({ isGlobal: true })],
   controllers: [],
 })
 export class AppModule {}
