@@ -30,3 +30,18 @@ export interface CommandReplyMessage<
 > extends Message<Payload, Metadata> {
   correlation_id: string;
 }
+
+export interface QueryMessage<
+  Payload extends MessagePayload = MessagePayload,
+  Metadata extends MessageMetadata = MessageMetadata,
+> extends Message<Payload, Metadata> {
+  correlation_id: string;
+  replyTo: string;
+}
+
+export interface QueryReplyMessage<
+  Payload extends MessagePayload = MessagePayload,
+  Metadata extends MessageMetadata = MessageMetadata,
+> extends Message<Payload, Metadata> {
+  correlation_id: string;
+}

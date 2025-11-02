@@ -15,9 +15,8 @@ export class KafkaProducer implements OnModuleInit {
   }
 
   async onModuleInit() {
-    this.logger.debug('Producer connecting ...');
     await this.producer.connect();
-    this.logger.debug('Producer connected');
+    this.logger.log('Producer connected');
   }
 
   async produce<M extends Message>(topic: string, message: M, key: string) {

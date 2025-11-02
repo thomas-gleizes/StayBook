@@ -11,13 +11,19 @@ services:
     deploy:
       replicas: 1
     volumes:
-      - "./Kalat/Staybook/Modules/User:/usr/src/app"
+      - "./Kalat/Staybook/Modules/UserManagement:/usr/src/app"
     working_dir: "/usr/src/app"
     command: pnpm start:dev
     networks:
       staybook-net:
         aliases:
           - modules.user
+    depends_on:
+      - system_broker
+    environment:
+      KAFKA_BROKERS: system.broker:9092
+      LOG_LEVEL: debug
+      NODE_ENV: development
 
   system_gateway:
     build: .docker/node
@@ -31,11 +37,19 @@ services:
       staybook-net:
         aliases:
           - system.gateway
+    depends_on:
+      - system_broker
+      - system_proxy
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.system_gateway.loadbalancer.server.port=3000"
       - "traefik.http.routers.system_gateway.rule=Host(`gateway.staybook.localhost`)"
       - "traefik.http.routers.system_gateway.entrypoints=web"
+    environment:
+      KAFKA_BROKERS: system.broker:9092
+      LOG_LEVEL: debug
+      NODE_ENV: development
+      PORT: 3000
 
   system_proxy:
     image: traefik:latest

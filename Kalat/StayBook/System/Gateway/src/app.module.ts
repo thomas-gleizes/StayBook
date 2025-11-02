@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UserModule } from './user/user.module';
+import { UserManagementModule } from './user-management/user-management.module';
 import { ConfigModule } from '@nestjs/config';
 import { KafkaModule } from './shared/kafka/kafka.module';
 import { getEnvironment } from './shared/config/environment';
@@ -8,11 +8,10 @@ import { getEnvironment } from './shared/config/environment';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env.local', '.env'],
       validate: (config) => getEnvironment(config),
     }),
     KafkaModule,
-    UserModule,
+    UserManagementModule,
   ],
 })
 export class AppModule {}

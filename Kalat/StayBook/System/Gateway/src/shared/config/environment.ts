@@ -11,7 +11,6 @@ export const environment = z.object({
     .transform<LogLevel[]>((value) => value.split(',') as LogLevel[]),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   KAFKA_BROKERS: z.string().transform<string[]>((value) => value.split(',')),
-  KAFKA_CONSUMER_GROUP: z.string(),
 });
 
 export function getEnvironment<Values = unknown>(values: Values) {

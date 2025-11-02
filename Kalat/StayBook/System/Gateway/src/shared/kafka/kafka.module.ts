@@ -1,31 +1,24 @@
 import { Global, Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { KAFKA_BROKER } from './kafka.token';
 import { KafkaProducer } from './kafka.producer';
 import { SERVICE_NOMENCLATURE } from '../config/constants';
+import { Kafka } from 'kafkajs';
 
 @Global()
 @Module({
-  imports: [
-    ClientsModule.registerAsync([
-      {
-        name: KAFKA_BROKER,
-        imports: [ConfigModule],
-        inject: [ConfigService],
-        useFactory: (config: ConfigService) => ({
-          transport: Transport.KAFKA,
-          options: {
-            client: {
-              clientId: SERVICE_NOMENCLATURE,
-              brokers: config.getOrThrow<string[]>('KAFKA_BROKERS'),
-            },
-          },
+  providers: [
+    {
+      provide: KAFKA_BROKER,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        new Kafka({
+          clientId: SERVICE_NOMENCLATURE,
+          brokers: config.getOrThrow('KAFKA_BROKERS'),
         }),
-      },
-    ]),
+    },
+    KafkaProducer,
   ],
-  providers: [KafkaProducer],
-  exports: [ClientsModule, KafkaProducer],
+  exports: [KafkaProducer],
 })
 export class KafkaModule {}
