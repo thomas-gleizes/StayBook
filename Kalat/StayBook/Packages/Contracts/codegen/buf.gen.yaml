@@ -1,0 +1,7 @@
+version: v2
+inputs:
+  - directory: ../schemas
+plugins:
+  - local: protoc-gen-es
+    opt: target=ts+js
+    out: src/gen

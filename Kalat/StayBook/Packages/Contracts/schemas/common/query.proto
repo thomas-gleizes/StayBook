@@ -1,0 +1,30 @@
+syntax = "proto3";
+package common;
+import "common/message.proto";
+
+message QueryMessage {
+  // Core Message
+  string id = 1;
+  string content_type = 2;
+  repeated MessagePayloadEntry payload = 3;
+  repeated MessageMetadataEntry metadata = 4;
+  string created_by = 5;
+  int64 created_at = 6;
+
+  // Core Command
+  string correlation_id = 7;
+  string replyTo = 8;
+}
+
+message QueryReplyMessage {
+  // Core Message
+  string id = 1;
+  string content_type = 2;
+  repeated MessagePayloadEntry payload = 3;
+  repeated MessageMetadataEntry metadata = 4;
+  string created_by = 5;
+  int64 created_at = 6;
+
+  // Core Command Reply
+  string correlation_id = 7;
+}
