@@ -1,13 +1,19 @@
-import * as Joi from 'joi';
+import { z } from 'zod';
+import { LogLevel } from '@nestjs/common';
 
-export const environment = Joi.object({
-  NODE_ENV: Joi.string()
-    .valid('development', 'production', 'test', 'provision')
+export const environment = z.object({
+  NODE_ENV: z
+    .enum(['development', 'production', 'test', 'provision'])
     .default('development'),
-  LOG_LEVEL: Joi.string()
-    .valid('fatal', 'error', 'warn', 'log', 'debug', 'verbose')
-    .default('log'),
-  PORT: Joi.number().port().default(3000),
-  KAFKA_BROKERS: Joi.string().required(),
-  KAFKA_CONSUMER_GROUP: Joi.string().required(),
+  LOG_LEVEL: z
+    .string()
+    .default('log')
+    .transform<LogLevel[]>((value) => value.split(',') as LogLevel[]),
+  PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  KAFKA_BROKERS: z.string().transform<string[]>((value) => value.split(',')),
+  KAFKA_CONSUMER_GROUP: z.string(),
 });
+
+export function getEnvironment<Values = unknown>(values: Values) {
+  return environment.parse(values, {});
+}
