@@ -30,7 +30,7 @@ export class UserManagementController {
   @ApiOperation({ summary: 'Retrieve all users' })
   @ApiOkResponse({ type: UsersResponseDto })
   async get() {
-    const base = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.query`;
+    const base = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1alpha.query`;
 
     const query: CommandReplyMessage = {
       id: randomUUID(),
@@ -57,7 +57,7 @@ export class UserManagementController {
   @ApiOperation({ summary: 'Create a user' })
   @ApiAcceptedResponse()
   async create(@Body() body: CreateUserBodyDto) {
-    const base = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.command`;
+    const base = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1alpha.command`;
 
     const command: CommandReplyMessage = {
       id: randomUUID(),
