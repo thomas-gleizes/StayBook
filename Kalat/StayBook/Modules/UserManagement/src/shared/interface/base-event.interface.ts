@@ -1,3 +1,3 @@
 export abstract class BaseEvent {
-  protected constructor(public readonly occurredAt: Date) {}
+  public readonly occurredAt = new Date();
 }

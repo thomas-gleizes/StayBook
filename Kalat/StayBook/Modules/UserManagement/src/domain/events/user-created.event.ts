@@ -7,6 +7,6 @@ export class UserCreatedEvent extends BaseEvent {
     public readonly lastName: string,
     public readonly email: string,
   ) {
-    super(new Date());
+    super();
   }
 }

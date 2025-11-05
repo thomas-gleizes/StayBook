@@ -1,0 +1,19 @@
+{
+  "id": "123",
+  "content_type": "Kalat.Staybook.Modules.UserManagement.v1alpha.domain.UserCreated",
+  "metadata": {
+    "tenant-id": "123"
+  },
+  "payload": {
+    "id": "123",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@staybook.example"
+  },
+  "created_by": "Kalat.Staybook.Modules.UserManagement.v1alpha",
+  "created_at": "2025-11-04T17:51:31.247Z",
+  "state": "created",
+  "version": 1,
+  "aggregate_id": "123",
+  "occurred_at": "2025-11-04T17:51:31.247Z"
+}

@@ -5,6 +5,7 @@ export const environment = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test', 'provision']).default('development'),
   LOG_LEVEL: z.string().transform((value) => value.split(',') as LogLevel[]),
   KAFKA_BROKERS: z.string().transform((value) => value.split(',')),
+  DATABASE_URL: z.url(),
 });
 
 export function getEnvironment<Values = unknown>(values: Values) {

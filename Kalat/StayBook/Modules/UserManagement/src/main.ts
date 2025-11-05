@@ -2,8 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { ConsoleLogger } from '@nestjs/common';
-import { getEnvironment } from './shared/config/environment';
 import { SERVICE_NOMENCLATURE } from './shared/config/constants';
+import { getEnvironment } from './shared/config/environment';
 
 async function bootstrap() {
   const environment = getEnvironment(process.env);

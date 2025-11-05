@@ -1,0 +1,33 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id          String   @id @map("_id")
+  contentType String   @map("content_type")
+  aggregate   String
+  aggregateId String   @map("aggregate_id")
+  state       String
+  version     Int
+  occurredAt  DateTime @map("occurred_at")
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @map("created_at")
+  payload     Json
+  metadata    Json
+
+  @@unique([aggregateId, version])
+  @@index([aggregateId])
+  @@map("events")
+}
