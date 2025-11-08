@@ -3,11 +3,9 @@ import { AppModule } from './app.module';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { ConsoleLogger } from '@nestjs/common';
 import { SERVICE_NOMENCLATURE } from './shared/config/constants';
-import { getEnvironment } from './shared/config/environment';
+import { environment } from './shared/config/environment';
 
 async function bootstrap() {
-  const environment = getEnvironment(process.env);
-
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
     logger: new ConsoleLogger({
       prefix: SERVICE_NOMENCLATURE,

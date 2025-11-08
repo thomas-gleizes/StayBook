@@ -1,4 +1,4 @@
-import { Message } from './kafka-message.interface';
+import { BaseMessage } from './kafka-message.interface';
 import { Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { KAFKA_BROKER } from './kafka.token';
 import { Kafka, Producer } from 'kafkajs';
@@ -19,7 +19,7 @@ export class KafkaProducer implements OnModuleInit {
     this.logger.log('Producer connected');
   }
 
-  async produce<M extends Message>(topic: string, message: M, key: string) {
+  async produce<M extends BaseMessage>(topic: string, message: M, key: string) {
     this.logger.debug(`Producing message - ${topic}`);
 
     await this.producer.send({

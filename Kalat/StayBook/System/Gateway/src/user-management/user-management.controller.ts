@@ -5,6 +5,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
   Post,
 } from '@nestjs/common';
 import {
@@ -13,7 +15,7 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 import { KafkaProducer } from '../shared/kafka/kafka.producer';
-import { CommandReplyMessage } from '../shared/kafka/kafka-message.interface';
+import { CommandMessage } from '../shared/kafka/kafka-message.interface';
 import { CreateUserBodyDto } from './dtos/input/create-user-body.dto';
 import {
   APP_NAME,
@@ -21,6 +23,7 @@ import {
   SERVICE_NOMENCLATURE,
 } from '../shared/config/constants';
 import { UsersResponseDto } from './dtos/output/users-response.dto';
+import { EditUserBodyDto } from './dtos/input/edit-user-body.dto';
 
 @Controller()
 export class UserManagementController {
@@ -29,26 +32,7 @@ export class UserManagementController {
   @Get('users')
   @ApiOperation({ summary: 'Retrieve all users' })
   @ApiOkResponse({ type: UsersResponseDto })
-  async get() {
-    const base = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1alpha.query`;
-
-    const query: CommandReplyMessage = {
-      id: randomUUID(),
-      correlation_id: randomUUID(),
-      payload: {
-        offset: 0,
-        limit: 10,
-      },
-      content_type: `${base}.GetUsers`,
-      metadata: {
-        tenant_id: randomUUID(),
-      },
-      created_by: SERVICE_NOMENCLATURE,
-      created_at: new Date().toISOString(),
-    };
-
-    await this.producer.produce(`${base}.User`, query, query.correlation_id);
-
+  get() {
     return { records: [], total: 0 };
   }
 
@@ -59,7 +43,7 @@ export class UserManagementController {
   async create(@Body() body: CreateUserBodyDto) {
     const base = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1alpha.command`;
 
-    const command: CommandReplyMessage = {
+    const command: CommandMessage<any> = {
       id: randomUUID(),
       correlation_id: randomUUID(),
       payload: body.toMessage(),
@@ -69,9 +53,40 @@ export class UserManagementController {
       },
       created_by: SERVICE_NOMENCLATURE,
       created_at: new Date().toISOString(),
+      reply_to: `${base}.User.reply`,
     };
 
-    await this.producer.produce<CommandReplyMessage>(
+    await this.producer.produce<CommandMessage<any>>(
+      `${base}.User`,
+      command,
+      command.correlation_id,
+    );
+  }
+
+  @Patch('users/:id')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({ summary: 'Create a user' })
+  @ApiAcceptedResponse()
+  async edit(@Param('id') userId: string, @Body() body: EditUserBodyDto) {
+    const base = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1alpha.command`;
+
+    const command: CommandMessage<any> = {
+      id: randomUUID(),
+      correlation_id: randomUUID(),
+      payload: {
+        userId: userId,
+        input: body.toMessage(),
+      },
+      content_type: `${base}.EditUser`,
+      metadata: {
+        tenant_id: randomUUID(),
+      },
+      created_by: SERVICE_NOMENCLATURE,
+      created_at: new Date().toISOString(),
+      reply_to: `${base}.User.reply`,
+    };
+
+    await this.producer.produce<CommandMessage<any>>(
       `${base}.User`,
       command,
       command.correlation_id,

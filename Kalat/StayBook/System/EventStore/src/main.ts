@@ -7,6 +7,7 @@ type Event = {
   id: string;
   content_type: string;
   aggregate_id: string;
+  aggregate_type: string;
   state: string;
   version: number;
   occurred_at: string;
@@ -30,41 +31,30 @@ async function bootstrap() {
 
   await consumer.subscribe({ topic: /domain/, fromBeginning: true });
   await consumer.run({
-    eachBatch: async ({ batch, heartbeat, resolveOffset }) => {
-      const interval = setInterval(() => heartbeat(), 5_000);
+    eachMessage: async ({ topic, message }) => {
+      try {
+        if (!message.value) return;
 
-      for (const message of batch.messages) {
-        if (!message.value) continue;
+        const event: Event = JSON.parse(message.value.toString());
 
-        try {
-          const event = JSON.parse(message.value.toString()) as Event;
-
-          console.log("Event", event);
-
-          await prisma.event.upsert({
-            where: { id: event.id },
-            create: {
-              id: event.id,
-              contentType: event.content_type,
-              aggregate: batch.topic,
-              aggregateId: event.aggregate_id,
-              state: event.state,
-              version: event.version,
-              occurredAt: event.occurred_at,
-              createdAt: event.created_at,
-              createdBy: event.created_by,
-              payload: event.payload,
-              metadata: event.metadata,
-            },
-            update: {},
-          });
-        } catch (error) {
-          console.log("ERROR", error);
-          throw error;
-        }
+        await prisma.event.create({
+          data: {
+            id: event.id,
+            contentType: event.content_type,
+            aggregate: event.aggregate_type,
+            aggregateId: event.aggregate_id,
+            state: event.state,
+            version: event.version,
+            occurredAt: event.occurred_at,
+            createdAt: event.created_at,
+            createdBy: event.created_by,
+            payload: event.payload,
+            metadata: event.metadata,
+          },
+        });
+      } catch (error) {
+        console.log("Error", error);
       }
-
-      clearInterval(interval);
     },
   });
 }

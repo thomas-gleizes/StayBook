@@ -1,18 +1,26 @@
 import { Module } from '@nestjs/common';
-import { UserCommandRepository } from '../../infrascture/repositories/user-command.repository';
+import { UserCommandRepository } from '../../infrastructure/repositories/user-command.repository';
 import { USER_COMMAND_REPOSITORY } from '../../domain/repostiories/user-command.repostiory';
 import { UserConsumer } from '../../presentation/consumers/user.consumer';
 import { usersCommandHanders } from '../../application/commands';
-import { CqrsModule } from '@nestjs/cqrs';
 import { IDENTIFIANT_GENERATOR } from '../../domain/ports/identifiant-generator.port';
-import { RandomUuidGeneratorAdapter } from '../../infrascture/adapters/random-uuid-generator.adapter';
-import { MessagingModule } from '../messaging/messaging.module';
+import { RandomUuidGeneratorAdapter } from '../../infrastructure/adapters/random-uuid-generator.adapter';
+import { eventHanders } from '../../application/events';
+import { userQueryHandlers } from '../../application/queries';
+import { USER_QUERY_REPOSITORY } from '../../domain/repostiories/user-query.repository';
+import { UserQueryRepository } from '../../infrastructure/repositories/user-query.repository';
 
 @Module({
-  imports: [CqrsModule],
+  imports: [],
   controllers: [UserConsumer],
   providers: [
+    ...userQueryHandlers,
     ...usersCommandHanders,
+    ...eventHanders,
+    {
+      provide: USER_QUERY_REPOSITORY,
+      useClass: UserQueryRepository,
+    },
     {
       provide: USER_COMMAND_REPOSITORY,
       useClass: UserCommandRepository,

@@ -1,9 +1,10 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
 import { KAFKA_BROKER } from './kafka.token';
+import { BaseMessage } from '../messaging/messaging.interface';
 
 @Injectable()
-export class KafkaProducer {
+export class KafkaProducer implements OnModuleInit {
   private readonly logger = new Logger('KAFKA PRODUCER');
   private readonly producer: Producer;
 
@@ -14,12 +15,16 @@ export class KafkaProducer {
     this.producer = broker.producer({ idempotent: true });
   }
 
-  async publish(topic: string, message: any, key: string) {
+  async onModuleInit() {
+    await this.producer.connect();
+  }
+
+  async publish<M extends BaseMessage>(topic: string, messages: M[], key: string) {
     this.logger.debug(topic);
 
     await this.producer.send({
       topic,
-      messages: [{ key, value: JSON.stringify(message) }],
+      messages: messages.map((message) => ({ key: key, value: JSON.stringify(message) })),
     });
   }
 }

@@ -1,47 +1,30 @@
-export type MessagePayload = {
-  [key: string]: string | number | boolean | MessagePayload | MessagePayload[];
-};
-
-export type MessageMetadata = { [key: string]: string };
-
-export interface Message<
-  Payload extends MessagePayload = MessagePayload,
-  Metadata extends MessageMetadata = MessageMetadata,
-> {
+export interface BaseMessage {
   id: string;
   content_type: string;
-  payload: Payload;
-  metadata: Metadata;
-  created_by: string;
   created_at: string;
+  created_by: string;
+  metadata: object;
 }
 
-export interface CommandMessage<
-  Payload extends MessagePayload = MessagePayload,
-  Metadata extends MessageMetadata = MessageMetadata,
-> extends Message<Payload, Metadata> {
+export interface CommandMessage<Payload> extends BaseMessage {
   correlation_id: string;
-  replyTo: string;
+  payload: Payload;
+  reply_to: string;
 }
 
-export interface CommandReplyMessage<
-  Payload extends MessagePayload = MessagePayload,
-  Metadata extends MessageMetadata = MessageMetadata,
-> extends Message<Payload, Metadata> {
+export interface QueryMessage<Payload> extends BaseMessage {
   correlation_id: string;
+  payload: Payload;
+  reply_to: string;
 }
 
-export interface QueryMessage<
-  Payload extends MessagePayload = MessagePayload,
-  Metadata extends MessageMetadata = MessageMetadata,
-> extends Message<Payload, Metadata> {
+export interface ReplyMessage<Payload> extends BaseMessage {
   correlation_id: string;
-  replyTo: string;
+  payload: Payload;
 }
 
-export interface QueryReplyMessage<
-  Payload extends MessagePayload = MessagePayload,
-  Metadata extends MessageMetadata = MessageMetadata,
-> extends Message<Payload, Metadata> {
+export interface ErrorMessage extends BaseMessage {
+  error: string;
+  message: string;
   correlation_id: string;
 }

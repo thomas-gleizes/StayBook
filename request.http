@@ -1,0 +1,21 @@
+### GET ALL USERS
+GET http://system.gateway:3000/users
+
+### CREATE USER
+POST http://system.gateway:3000/users
+Content-Type: application/json
+
+{
+  "firstName": "{{$random.name.firstName}}",
+  "lastName": "{{$random.name.lastName}}",
+  "email": "{{$random.email}}"
+}
+
+### EDIT USER
+PATCH http://gateway.staybook.localhost/users/e7801b7a-d307-4b38-aaaa-dae5eb98c644
+Content-Type: application/json
+
+{
+  "firstName": "{{$random.name.firstName}}",
+  "lastName": "{{$random.name.lastName}}"
+}

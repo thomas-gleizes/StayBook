@@ -17,19 +17,26 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "seed:users": "ts-node -r tsconfig-paths/register src/infrastructure/seeding/users/create-user.seeding.ts",
+    "seed:users:edit": "ts-node -r tsconfig-paths/register src/infrastructure/seeding/users/edit-user.seeding.ts"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.1.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/cqrs": "^11.0.3",
     "@nestjs/microservices": "^11.1.8",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/schedule": "^6.0.1",
     "@prisma/client": "^6.18.0",
+    "@types/yargs": "^17.0.34",
+    "dotenv": "^17.2.3",
     "kafkajs": "^2.2.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "yargs": "^18.0.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {

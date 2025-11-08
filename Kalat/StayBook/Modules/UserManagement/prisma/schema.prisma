@@ -14,9 +14,73 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Views
 model User {
   id        String @id @map("_id")
   firstName String
   lastName  String
   email     String
+
+  @@map("users_view")
+}
+
+// Outbox
+model OutboxMessage {
+  id                String       @id @map("_id")
+  message           String
+  topic             String
+  type              OutboxType
+  status            OutboxStatus @default(PENDING)
+  startProcessingAt DateTime?    @map("start_processing_at")
+  processedAt       DateTime?    @map("processed_at")
+  retry             Int?
+  error             String?
+
+  @@index([status])
+  @@index([startProcessingAt])
+  @@index([type])
+  @@map("outbox_messages")
+}
+
+enum OutboxType {
+  EVENT
+  COMMAND
+  QUERY
+  REPLY
+  ERROR
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+// Event Store
+model EventStore {
+  id             String   @id @map("_id")
+  content_type   String
+  aggregate_type String
+  aggregate_id   String
+  created_at     DateTime
+  created_by     String
+  version        Int
+  state          Json
+
+  @@index([aggregate_id])
+  @@unique([aggregate_id, version])
+  @@map("events_store")
+}
+
+model EventSnapshot {
+  id            String   @id @map("_id")
+  aggregateType String   @map("aggregate_type")
+  aggregateId   String   @map("aggregate_id")
+  version       String
+  state         Json
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([aggregateId])
+  @@map("events_snaphost")
 }
