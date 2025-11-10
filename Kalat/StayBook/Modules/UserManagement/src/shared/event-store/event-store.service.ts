@@ -6,8 +6,9 @@ import { BaseEvent } from '../interface/base-event.interface';
 import { Events } from '../../domain/events';
 import { BaseAggregateRoot } from '../interface/base-aggregate-root';
 import { randomUUID } from 'crypto';
-import { SERVICE_NOMENCLATURE } from '../config/constants';
+import { SERVICE_FQN } from '../config/constants';
 import { OutboxService } from '../outbox/outbox.service';
+import { ConcurrencyControlException } from '../../infrastructure/exceptions/concurrency-control.exception';
 
 @Injectable()
 export class EventStoreService {
@@ -18,7 +19,7 @@ export class EventStoreService {
     private readonly outbox: OutboxService,
   ) {
     for (const Event of Events) {
-      this.eventMap.set(`${SERVICE_NOMENCLATURE}.domain.${Event.name}`, Event);
+      this.eventMap.set(`${SERVICE_FQN}.domain.${Event.name}`, Event);
     }
   }
 
@@ -34,16 +35,16 @@ export class EventStoreService {
     });
 
     if (version !== storeVersion) {
-      throw new Error(`expected version no same : aggregate(${version}) - EventStore(${storeVersion})`);
+      throw new ConcurrencyControlException(version, storeVersion);
     }
 
     const storableEvents = uncommittedEvents.map<DomainEvent>((event, index) => ({
       id: randomUUID(),
-      content_type: `${SERVICE_NOMENCLATURE}.domain.${event.constructor.name}`,
+      content_type: `${SERVICE_FQN}.domain.${event.constructor.name}`,
       created_at: new Date().toISOString(),
-      created_by: SERVICE_NOMENCLATURE,
+      created_by: SERVICE_FQN,
       metadata: {},
-      aggregate_type: `${SERVICE_NOMENCLATURE}.domain.${aggregate.getAggregateType()}`,
+      aggregate_type: `${SERVICE_FQN}.domain.${aggregate.getAggregateType()}`,
       aggregate_id: aggregate.getAggregateId(),
       version: version + index,
       state: event,

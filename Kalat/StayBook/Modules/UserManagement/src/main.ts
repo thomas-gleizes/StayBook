@@ -1,28 +1,25 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Transport, MicroserviceOptions } from '@nestjs/microservices';
-import { ConsoleLogger } from '@nestjs/common';
-import { SERVICE_NOMENCLATURE } from './shared/config/constants';
+import { ConsoleLogger, Logger } from '@nestjs/common';
+import { SERVICE_FQN } from './shared/config/constants';
 import { environment } from './shared/config/environment';
+import { KafkaRunner } from './shared/kafka/kafka.runner';
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
+  const app = await NestFactory.createApplicationContext(AppModule, {
     logger: new ConsoleLogger({
-      prefix: SERVICE_NOMENCLATURE,
+      prefix: SERVICE_FQN,
       logLevels: environment.LOG_LEVEL,
     }),
-    transport: Transport.KAFKA,
-    options: {
-      client: {
-        brokers: environment.KAFKA_BROKERS,
-      },
-      consumer: {
-        groupId: SERVICE_NOMENCLATURE,
-      },
-    },
   });
+  const logger = new Logger('Main');
+  const runner = app.get(KafkaRunner);
 
-  await app.listen();
+  await app.init();
+  logger.log('Application initialized');
+
+  await runner.listen();
+  logger.log('Application started');
 }
 
 bootstrap();

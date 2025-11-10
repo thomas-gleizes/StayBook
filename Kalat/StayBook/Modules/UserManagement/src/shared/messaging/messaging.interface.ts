@@ -15,17 +15,14 @@ export interface DomainEvent<Event extends BaseEvent = BaseEvent> extends BaseMe
   version: number;
 }
 
-export interface CommandMessage<Payload> extends BaseMessage {
+export interface ActionMessage<Payload = unknown> extends BaseMessage {
   correlation_id: string;
   payload: Payload;
   reply_to: string;
 }
 
-export interface QueryMessage<Payload> extends BaseMessage {
-  correlation_id: string;
-  payload: Payload;
-  reply_to: string;
-}
+export type CommandMessage<Payload> = ActionMessage<Payload>;
+export type QueryMessage<Payload> = ActionMessage<Payload>;
 
 export interface ReplyMessage<Payload> extends BaseMessage {
   correlation_id: string;

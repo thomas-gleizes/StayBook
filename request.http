@@ -19,3 +19,7 @@ Content-Type: application/json
   "firstName": "{{$random.name.firstName}}",
   "lastName": "{{$random.name.lastName}}"
 }
+
+### FIND USER
+GET http://gateway.staybook.localhost/users/e7801b7a-d307-4b38-aaaa-dae5eb98c644
+Accept: application/json

@@ -28,7 +28,7 @@ export type UserSnapshot = {
   email: string;
 };
 
-export class UserAggregate extends BaseAggregateRoot {
+export class UserAggregate extends BaseAggregateRoot<UserSnapshot> {
   protected constructor(protected state: UserState) {
     super();
   }

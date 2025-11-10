@@ -1,11 +1,14 @@
 import { Global, Module } from '@nestjs/common';
 import { KafkaModule } from '../kafka/kafka.module';
 import { MessagingPublisher } from './messaging.publisher';
+import { DiscoveryModule } from '@nestjs/core';
+import { MessagingCommandSubscriber } from './commands/messaging-command.subscriber';
+import { MessagingQuerySubscriber } from './queries/messaging-query.subscriber';
 
 @Global()
 @Module({
-  imports: [KafkaModule],
-  providers: [MessagingPublisher],
+  imports: [KafkaModule, DiscoveryModule],
+  providers: [MessagingPublisher, MessagingCommandSubscriber, MessagingQuerySubscriber],
   exports: [MessagingPublisher],
 })
 export class MessagingModule {}

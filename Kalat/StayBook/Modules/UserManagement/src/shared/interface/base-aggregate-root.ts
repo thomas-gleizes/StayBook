@@ -1,7 +1,12 @@
 import { AggregateRoot } from '@nestjs/cqrs';
 import { BaseEvent } from './base-event.interface';
 
-export abstract class BaseAggregateRoot<TBase extends BaseEvent = BaseEvent> extends AggregateRoot<TBase> {
+export type Snapshot = { [key: string]: string | number | boolean | null | Snapshot | Snapshot[] };
+
+export abstract class BaseAggregateRoot<
+  TSnapshot extends Snapshot = Snapshot,
+  TBase extends BaseEvent = BaseEvent,
+> extends AggregateRoot<TBase> {
   private version = 0;
 
   getVersion() {
@@ -22,4 +27,5 @@ export abstract class BaseAggregateRoot<TBase extends BaseEvent = BaseEvent> ext
 
   abstract getAggregateType(): string;
   abstract getAggregateId(): string;
+  abstract takeSnapshot(): TSnapshot;
 }
