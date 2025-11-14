@@ -10,7 +10,7 @@ export type MessageHandler<TMessage extends BaseMessage> = (
 ) => Promise<void> | void;
 
 export class KafkaConsumer {
-  private readonly logger = new Logger('CONSUMER');
+  private readonly logger = new Logger('Consumer');
   private readonly consumer: Consumer;
   private readonly handlers = new Map<string, MessageHandler<BaseMessage>>();
 
@@ -42,8 +42,9 @@ export class KafkaConsumer {
     await this.consumer.connect();
     await this.consumer.run({
       autoCommit: false,
-      eachMessage: async ({ topic, message, heartbeat }) => {
-        const interval = setInterval(heartbeat, 1000);
+      eachMessage: async ({ topic, message, partition, heartbeat }) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        const interval = setInterval(() => heartbeat(), 5000);
 
         try {
           if (!message.value) return;
@@ -53,6 +54,13 @@ export class KafkaConsumer {
           if (!handler) return this.logger.warn(`NO HANDLER FOUND FOR '${topic}'`);
 
           await handler(topic, value);
+          await this.consumer.commitOffsets([
+            {
+              topic,
+              partition,
+              offset: (Number(message.offset) + 1).toString(),
+            },
+          ]);
         } catch (error) {
           this.logger.error(`FAILED ON MESSAGE CONSUMING ${topic}`, error);
         } finally {

@@ -15,7 +15,7 @@ export type Persistor<Event extends BaseEvent> = (
 export abstract class BaseCommandRepository<TAggregate extends BaseAggregateRoot>
   implements CommandRepositoryPort<TAggregate>
 {
-  private readonly logger = new Logger('COMMAND_REPOSITORY');
+  private readonly logger = new Logger('Command Repository');
   private readonly viewPersistors = new Map<string, Persistor<BaseEvent>>();
 
   protected constructor(

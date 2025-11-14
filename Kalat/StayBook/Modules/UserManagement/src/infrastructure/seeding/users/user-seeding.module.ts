@@ -7,12 +7,14 @@ import { OutboxModule } from '../../../shared/outbox/outbox.module';
 import { PrismaModule } from '../../../shared/prisma/prisma.module';
 import { MessagingModule } from '../../../shared/messaging/messaging.module';
 import { UserCommandRepository } from '../../repositories/user-command.repository';
+import { RedisModule } from '../../../shared/redis/redis.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: (config) => validateEnvironment(config) }),
     EventStoreModule,
     CqrsModule,
+    RedisModule,
     OutboxModule,
     PrismaModule,
     MessagingModule,

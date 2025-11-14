@@ -4,12 +4,13 @@ networks:
 volumes:
   kafka-volume:
   mongo-volume:
+  postgres-volume:
 
 services:
   modules_user:
     build: .docker/node
     deploy:
-      replicas: 1
+      replicas: 3
     working_dir: "/usr/src/app"
     volumes:
       - "./Kalat/StayBook/Modules/UserManagement:/usr/src/app"
@@ -20,6 +21,8 @@ services:
           - modules.user
     depends_on:
       - system_broker
+      - system_redis
+      - system_postgres
 
   system_gateway:
     build: .docker/node
@@ -126,6 +129,27 @@ services:
       - "traefik.http.services.system_kafka_ui.loadbalancer.server.port=8080"
       - "traefik.http.routers.system_kafka_ui.rule=Host(`kafka.staybook.localhost`)"
       - "traefik.http.routers.system_kafka_ui.entrypoints=web"
+
+  system_postgres:
+    image: postgres:17.6
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    networks:
+      staybook-net:
+        aliases:
+          - system.postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+      - ./.docker/postgres:/docker-entrypoint-initdb.d
+
+  system_redis:
+    image: redis:8.2.3-alpine
+    networks:
+      staybook-net:
+        aliases:
+          - system.redis
 
   system_mongodb:
     image: mongo:8.2.1-noble

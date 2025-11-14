@@ -1,0 +1,7 @@
+CREATE USER staybook SUPERUSER;
+
+-- USER MANAGEMENT
+CREATE DATABASE user_management OWNER staybook;
+
+-- EVENT STORE
+CREATE DATABASE event_store OWNER staybook;

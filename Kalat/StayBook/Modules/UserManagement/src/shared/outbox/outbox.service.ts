@@ -1,5 +1,5 @@
 import { DomainEvent } from '../messaging/messaging.interface';
-import { OutboxMessage, OutboxType, Prisma } from '../../../generated/prisma/client';
+import { OutboxMessage, MessageType, Prisma, MessageStatus } from '../../../generated/prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
 import { MessagingPublisher } from '../messaging/messaging.publisher';
 import { PrismaService } from '../prisma/prisma.service';
@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class OutboxService {
-  private readonly logger = new Logger('OUTBOX');
+  private readonly logger = new Logger('Outbox');
 
   constructor(
     private readonly publisher: MessagingPublisher,
@@ -27,7 +27,7 @@ export class OutboxService {
     });
   }
 
-  private reserveMessages(...types: OutboxType[]): Promise<OutboxMessage[]> {
+  private reserveMessages(...types: MessageType[]): Promise<OutboxMessage[]> {
     return this.prisma.$transaction(async (transaction) => {
       const filters: Prisma.OutboxMessageWhereInput = {
         type: { in: types },
@@ -73,11 +73,10 @@ export class OutboxService {
 
   async processEvent() {
     const events = await this.reserveMessages('EVENT').catch(() => []);
-    const count = await this.prisma.outboxMessage.count({ where: { status: 'PENDING' } });
 
     if (!events.length) return this.logger.verbose('No events to process');
 
-    this.logger.verbose(`process ${events.length} event on ${count}`);
+    this.logger.verbose(`Process ${events.length}`);
 
     for (const event of events) {
       try {
@@ -109,15 +108,14 @@ export class OutboxService {
 
   async clearMessages() {
     const keepIds = await this.prisma.outboxMessage.findMany({
-      where: { status: 'PROCESSED' },
+      where: { status: MessageStatus.PROCESSED },
       orderBy: { processedAt: 'desc' },
       select: { id: true },
-      take: this.config.get<number>('OUTBOX_KEEP_PROCESSED_COUNT', 100),
+      take: Math.min(this.config.get<number>('OUTBOX_KEEP_PROCESSED_COUNT', 100), 50_000),
     });
 
     const result = await this.prisma.outboxMessage.deleteMany({
       where: {
-        status: 'PROCESSED',
         id: { notIn: keepIds.map((item) => item.id) },
       },
     });

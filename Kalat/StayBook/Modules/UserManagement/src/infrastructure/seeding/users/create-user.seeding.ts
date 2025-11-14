@@ -15,7 +15,7 @@ const argsSchema = z.object({
 
 async function createUserSeeding(args: z.infer<typeof argsSchema>) {
   const app = await NestFactory.createApplicationContext(UserSeedingModule);
-  const logger = new Logger('USER SEED');
+  const logger = new Logger('User Seed');
   const userCommandRepository = app.get(UserCommandRepository);
 
   logger.log(`start user seeding ${args.total}`);

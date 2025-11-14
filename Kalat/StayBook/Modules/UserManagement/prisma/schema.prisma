@@ -10,7 +10,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -24,15 +24,15 @@ model User {
   @@map("users_view")
 }
 
-// Outbox
+// Outbox & Inbox Messages
 model OutboxMessage {
-  id                String       @id @map("_id")
+  id                String        @id @map("_id")
   message           String
   topic             String
-  type              OutboxType
-  status            OutboxStatus @default(PENDING)
-  startProcessingAt DateTime?    @map("start_processing_at")
-  processedAt       DateTime?    @map("processed_at")
+  type              MessageType
+  status            MessageStatus @default(PENDING)
+  startProcessingAt DateTime?     @map("start_processing_at")
+  processedAt       DateTime?     @map("processed_at")
   retry             Int?
   error             String?
 
@@ -42,7 +42,24 @@ model OutboxMessage {
   @@map("outbox_messages")
 }
 
-enum OutboxType {
+model InboxMessage {
+  id                String        @id @map("_id")
+  message           String
+  topic             String
+  type              MessageType
+  status            MessageStatus
+  startProcessingAt DateTime?     @map("start_processing_at")
+  processedAt       DateTime?     @map("processed_at")
+  retry             Int?
+  error             String?
+
+  @@index([status])
+  @@index([startProcessingAt])
+  @@index([type])
+  @@map("inbox_messages")
+}
+
+enum MessageType {
   EVENT
   COMMAND
   QUERY
@@ -50,7 +67,7 @@ enum OutboxType {
   ERROR
 }
 
-enum OutboxStatus {
+enum MessageStatus {
   PENDING
   PROCESSING
   PROCESSED

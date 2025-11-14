@@ -17,7 +17,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
           query: {
             $allModels: {
               async $allOperations({ model, operation, args, query }) {
-                const logger = new Logger('PRISMA');
+                const logger = new Logger('Prisma');
 
                 const start = Date.now();
                 try {

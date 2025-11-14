@@ -8,6 +8,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { EventStoreModule } from './shared/event-store/event-store.module';
 import { OutboxModule } from './shared/outbox/outbox.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { LockerModule } from './shared/locker/locker.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     EventStoreModule,
     UserModule,
     OutboxModule,
+    LockerModule,
   ],
 })
 export class AppModule {}

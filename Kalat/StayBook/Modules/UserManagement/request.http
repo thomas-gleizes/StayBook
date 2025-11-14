@@ -1,8 +1,8 @@
 ### GET ALL USERS
-GET http://system.gateway:3000/users
+GET http://gateway.staybook.localhost/users
 
 ### CREATE USER
-POST http://system.gateway:3000/users
+POST http://gateway.staybook.localhost/users
 Content-Type: application/json
 
 {

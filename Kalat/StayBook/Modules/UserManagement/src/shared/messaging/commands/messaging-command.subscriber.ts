@@ -48,8 +48,6 @@ export class MessagingCommandSubscriber implements OnModuleInit {
       (name) => `${MessagingCommandSubscriber.NOMENCLATURE}${name}`,
     );
 
-    console.log('Topics', topics);
-
     await this.consumer.subscribe<CommandMessage<any>>(
       { topics, fromBeginning: true },
       async (topic, message) => {

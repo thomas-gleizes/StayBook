@@ -48,8 +48,6 @@ export class MessagingQuerySubscriber implements OnModuleInit {
       (name) => `${MessagingQuerySubscriber.NOMENCLATURE}${name}`,
     );
 
-    console.log('Topics', topics);
-
     await this.consumer.subscribe<QueryMessage<any>>(
       { topics, fromBeginning: true },
       async (topic, message) => {

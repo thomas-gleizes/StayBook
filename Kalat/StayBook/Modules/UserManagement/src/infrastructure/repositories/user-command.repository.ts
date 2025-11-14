@@ -41,8 +41,6 @@ export class UserCommandRepository
   async findById(id: string): Promise<UserAggregate | null> {
     const events = await this.eventStore.findEventByAggregate(id);
 
-    console.log('Events', events);
-
     if (!events.length) return null;
 
     const aggregate = UserAggregate.createEmpty();

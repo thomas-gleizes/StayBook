@@ -44,23 +44,23 @@ export class UserManagementController {
   @ApiOperation({ summary: 'Create a user' })
   @ApiAcceptedResponse()
   async create(@Body() body: CreateUserBodyDto) {
-    const base = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1alpha.command.CreateUserCommand`;
+    const topic = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1alpha.command.CreateUserCommand`;
 
     const command: CommandMessage<any> = {
       id: randomUUID(),
       correlation_id: randomUUID(),
-      payload: body.toMessage(),
-      content_type: base,
+      payload: { input: body.toMessage() },
+      content_type: topic,
       metadata: {
         tenant_id: randomUUID(),
       },
       created_by: SERVICE_NOMENCLATURE,
       created_at: new Date().toISOString(),
-      reply_to: `${base}.reply`,
+      reply_to: `${topic}.reply`,
     };
 
     await this.producer.produce<CommandMessage<any>>(
-      base,
+      topic,
       command,
       command.correlation_id,
     );

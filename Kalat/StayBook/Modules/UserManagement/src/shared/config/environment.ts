@@ -10,6 +10,9 @@ export const environmentSchema = z.object({
 
   SNAPSHOT: z.coerce.number().min(50).optional().default(100),
 
+  REDIS_HOST: z.hostname(),
+  REDIS_PORT: z.coerce.number().int().min(1).max(65535).default(6379),
+
   OUTBOX: z
     .string()
     .optional()

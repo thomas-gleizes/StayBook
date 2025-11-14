@@ -5,7 +5,7 @@ import { BaseMessage } from '../messaging/messaging.interface';
 
 @Injectable()
 export class KafkaProducer implements OnModuleInit {
-  private readonly logger = new Logger('KAFKA PRODUCER');
+  private readonly logger = new Logger('Producer');
   private readonly producer: Producer;
 
   constructor(
