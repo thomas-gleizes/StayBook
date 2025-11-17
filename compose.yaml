@@ -10,7 +10,7 @@ services:
   modules_user:
     build: .docker/node
     deploy:
-      replicas: 3
+      replicas: 2
     working_dir: "/usr/src/app"
     volumes:
       - "./Kalat/StayBook/Modules/UserManagement:/usr/src/app"
@@ -23,6 +23,11 @@ services:
       - system_broker
       - system_redis
       - system_postgres
+    env_file:
+      - path: ./Kalat/StayBook/Modules/UserManagement/.env.default
+        required: true
+      - path: ./Kalat/StayBook/Modules/UserManagement/.env
+        required: false
 
   system_gateway:
     build: .docker/node
@@ -44,33 +49,31 @@ services:
       - "traefik.http.services.system_gateway.loadbalancer.server.port=3000"
       - "traefik.http.routers.system_gateway.rule=Host(`gateway.staybook.localhost`)"
       - "traefik.http.routers.system_gateway.entrypoints=web"
-    environment:
-      KAFKA_BROKERS: system.broker:9092
-      LOG_LEVEL: debug
-      NODE_ENV: development
-      PORT: 3000
+    env_file:
+      - path: ./Kalat/StayBook/System/Gateway/.env
+        required: false
 
-  system_event_store:
-    build: .docker/node
-    deploy:
-      replicas: 1
-    networks:
-      staybook-net:
-        aliases:
-          - system.event_store
-    volumes:
-      - "./Kalat/StayBook/System/EventStore:/usr/src/app"
-    working_dir: "/usr/src/app"
-    command: sh -c "pnpm install --frozen-lockfile && pnpm start:dev"
-    environment:
-      KAFKA_BROKERS: system.broker:9092
-      LOG_LEVEL: debug
-      NODE_ENV: development
-      PORT: 3000
-      DATABASE_URL: "mongodb://system.mongodb:27017/event_store"
-    depends_on:
-      - system_broker
-      - system_mongodb
+#  system_event_store:
+#    build: .docker/node
+#    deploy:
+#      replicas: 1
+#    networks:
+#      staybook-net:
+#        aliases:
+#          - system.event_store
+#    volumes:
+#      - "./Kalat/StayBook/System/EventStore:/usr/src/app"
+#    working_dir: "/usr/src/app"
+#    command: sh -c "pnpm install --frozen-lockfile && pnpm start:dev"
+#    environment:
+#      KAFKA_BROKERS: system.broker:9092
+#      LOG_LEVEL: debug
+#      NODE_ENV: development
+#      PORT: 3000
+#      DATABASE_URL: "mongodb://system.mongodb:27017/event_store"
+#    depends_on:
+#      - system_broker
+#      - system_mongodb
 
   system_proxy:
     image: traefik:latest
@@ -150,64 +153,6 @@ services:
       staybook-net:
         aliases:
           - system.redis
-
-  system_mongodb:
-    image: mongo:8.2.1-noble
-    command: [ "--replSet", "rs0", "--bind_ip_all" ]
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-volume:/data/db
-    networks:
-      staybook-net:
-        aliases:
-          - system.mongodb
-
-  system_init_mongo_replica:
-    image: mongo:8.2.1-noble
-    entrypoint: [ "mongosh", "--host", "system.mongodb", "--eval", "'rs.initiate()'" ]
-    networks:
-      staybook-net:
-        aliases:
-          - system.init.mongo.replica
-    depends_on:
-      - system_mongodb
-
-  system_prisma_es:
-    build: .docker/node
-    command: pnpm prisma studio --hostname 0.0.0.0
-    volumes:
-      - "./Kalat/StayBook/System/EventStore:/usr/src/app"
-    working_dir: "/usr/src/app"
-    networks:
-      staybook-net:
-        aliases:
-          - system.prisma.es
-    environment:
-      DATABASE_URL: "mongodb://system.mongodb:27017/event_store"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.services.system_prisma_es.loadbalancer.server.port=5555"
-      - "traefik.http.routers.system_prisma_es.rule=Host(`event-store.prisma.localhost`)"
-      - "traefik.http.routers.system_prisma_es.entrypoints=web"
-
-  system_prisma_um:
-    build: .docker/node
-    command: pnpm prisma studio --hostname 0.0.0.0
-    volumes:
-      - "./Kalat/StayBook/Modules/UserManagement:/usr/src/app"
-    working_dir: "/usr/src/app"
-    networks:
-      staybook-net:
-        aliases:
-          - system.prisma.um
-    environment:
-      DATABASE_URL: "mongodb://system.mongodb:27017/users-management"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.services.system_prisma_um.loadbalancer.server.port=5555"
-      - "traefik.http.routers.system_prisma_um.rule=Host(`user-management.prisma.localhost`)"
-      - "traefik.http.routers.system_prisma_um.entrypoints=web"
 
   system_http_client:
     image: jetbrains/intellij-http-client

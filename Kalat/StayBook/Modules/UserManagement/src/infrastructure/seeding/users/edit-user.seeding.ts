@@ -32,11 +32,10 @@ async function createUserSeeding(args: z.infer<typeof argsSchema>) {
       firstName: faker.person.firstName(random > 0.5 ? 'female' : 'male'),
       lastName: faker.person.lastName(random > 0.5 ? 'female' : 'male'),
     });
-
-    const snapshot = aggregate.takeSnapshot();
-
     logger.log(
-      `${i} : ${snapshot.id} - ${snapshot.firstName} ${snapshot.lastName} - ${snapshot.email.toLowerCase()}`,
+      `${i} : ${aggregate
+        .getId()
+        .getValue()} - ${aggregate.getFirstName()} ${aggregate.getLastName()} - ${aggregate.getEmail()}`,
     );
   }
 

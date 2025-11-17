@@ -1,5 +1,5 @@
 import { UserQueryRepositoryPort, UserView } from '../../domain/repostiories/user-query.repository';
-import { PrismaService } from '../../shared/prisma/prisma.service';
+import { PrismaService } from '../../core/prisma/prisma.service';
 import { User } from '../../../generated/prisma/client';
 
 export class UserQueryRepository implements UserQueryRepositoryPort {

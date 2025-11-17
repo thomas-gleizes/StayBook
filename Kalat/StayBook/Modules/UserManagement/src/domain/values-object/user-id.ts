@@ -1,13 +1,11 @@
-import { ValueObject } from '../../shared/interface/value-object';
+import { Identifiant } from './identifiant';
 
-export class UserId implements ValueObject {
-  constructor(private readonly value: string) {}
-
-  takeSnapshot(): string {
-    return this.value;
+export class UserId extends Identifiant {
+  static create(value: string) {
+    return new UserId(`user-${value}`);
   }
 
-  static fromSnapshot(id: string) {
-    return new UserId(id);
+  static fromString(value: string) {
+    return new UserId(value);
   }
 }

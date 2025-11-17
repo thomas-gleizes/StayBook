@@ -2,10 +2,10 @@ import { UserAggregate } from 'src/domain/aggregates/user.aggregate';
 import { IUserCommandRepository } from '../../domain/repostiories/user-command.repostiory';
 import { BaseCommandRepository } from './base-command.repository';
 import { UserCreatedEvent } from '../../domain/events/users/user-created.event';
-import { PrismaService } from '../../shared/prisma/prisma.service';
+import { PrismaService } from '../../core/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { EventPublisher } from '@nestjs/cqrs';
-import { EventStoreService } from '../../shared/event-store/event-store.service';
+import { EventStoreService } from '../../core/event-store/event-store.service';
 import { UserEditedEvent } from '../../domain/events/users/user-edited.event';
 
 @Injectable()
@@ -43,7 +43,7 @@ export class UserCommandRepository
 
     if (!events.length) return null;
 
-    const aggregate = UserAggregate.createEmpty();
+    const aggregate = new UserAggregate();
 
     aggregate.loadFromHistory(events.map((event) => event.state));
 

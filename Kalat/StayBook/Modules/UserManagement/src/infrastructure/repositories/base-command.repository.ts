@@ -1,18 +1,18 @@
-import { BaseEvent } from '../../shared/interface/base-event.interface';
-import { BaseAggregateRoot } from '../../shared/interface/base-aggregate-root';
+import { BaseEvent } from '../../core/interface/base-event.interface';
 import { Prisma } from '../../../generated/prisma/client';
-import { PrismaService } from '../../shared/prisma/prisma.service';
+import { PrismaService } from '../../core/prisma/prisma.service';
 import { Logger, Type } from '@nestjs/common';
 import { EventPublisher } from '@nestjs/cqrs';
-import { EventStoreService } from '../../shared/event-store/event-store.service';
+import { EventStoreService } from '../../core/event-store/event-store.service';
 import { CommandRepositoryPort } from '../../domain/repostiories/base-command-repository.port';
+import { AggregateRoot } from '../../core/interface/aggregate-root';
 
 export type Persistor<Event extends BaseEvent> = (
   transaction: Prisma.TransactionClient,
   event: Event,
 ) => Promise<void>;
 
-export abstract class BaseCommandRepository<TAggregate extends BaseAggregateRoot>
+export abstract class BaseCommandRepository<TAggregate extends AggregateRoot>
   implements CommandRepositoryPort<TAggregate>
 {
   private readonly logger = new Logger('Command Repository');

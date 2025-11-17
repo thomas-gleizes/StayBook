@@ -28,10 +28,10 @@ async function createUserSeeding(args: z.infer<typeof argsSchema>) {
       email: faker.internet.email(),
     });
 
-    const snapshot = aggregate.takeSnapshot();
-
     logger.log(
-      `${i} : ${snapshot.id} - ${snapshot.firstName} ${snapshot.lastName} - ${snapshot.email.toLowerCase()}`,
+      `${i} : ${aggregate.getAggregateId()} - ${aggregate.getFirstName()} ${aggregate.getLastName()} - ${aggregate
+        .getEmail()
+        .toLowerCase()}`,
     );
 
     await userCommandRepository.persist(aggregate);

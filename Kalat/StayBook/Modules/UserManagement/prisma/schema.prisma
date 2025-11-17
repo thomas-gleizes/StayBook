@@ -16,7 +16,7 @@ datasource db {
 
 // Views
 model User {
-  id        String @id @map("_id")
+  id        String @id
   firstName String
   lastName  String
   email     String
@@ -26,11 +26,12 @@ model User {
 
 // Outbox & Inbox Messages
 model OutboxMessage {
-  id                String        @id @map("_id")
+  id                String        @id
   message           String
   topic             String
   type              MessageType
   status            MessageStatus @default(PENDING)
+  createdAt         DateTime      @default(now()) @map("created_at")
   startProcessingAt DateTime?     @map("start_processing_at")
   processedAt       DateTime?     @map("processed_at")
   retry             Int?
@@ -43,11 +44,11 @@ model OutboxMessage {
 }
 
 model InboxMessage {
-  id                String        @id @map("_id")
+  id                String        @id
   message           String
-  topic             String
   type              MessageType
   status            MessageStatus
+  createdAt         DateTime      @default(now()) @map("created_at")
   startProcessingAt DateTime?     @map("start_processing_at")
   processedAt       DateTime?     @map("processed_at")
   retry             Int?
@@ -76,22 +77,23 @@ enum MessageStatus {
 
 // Event Store
 model EventStore {
-  id             String   @id @map("_id")
-  content_type   String
-  aggregate_type String
-  aggregate_id   String
-  created_at     DateTime
-  created_by     String
+  id             String   @id
+  content_type   String   @map("content_type")
+  aggregate_type String   @map("aggregate_type")
+  aggregate_id   String   @map("aggregate_id")
+  created_at     DateTime @map("created_at")
+  created_by     String   @map("created_by")
   version        Int
+  metadata       Json
   state          Json
 
-  @@index([aggregate_id])
   @@unique([aggregate_id, version])
+  @@index([aggregate_id])
   @@map("events_store")
 }
 
 model EventSnapshot {
-  id            String   @id @map("_id")
+  id            String   @id
   aggregateType String   @map("aggregate_type")
   aggregateId   String   @map("aggregate_id")
   version       String

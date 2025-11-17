@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConsoleLogger, Logger } from '@nestjs/common';
-import { SERVICE_FQN } from './shared/config/constants';
-import { environment } from './shared/config/environment';
-import { KafkaRunner } from './shared/kafka/kafka.runner';
+import { SERVICE_FQN } from './core/config/constants';
+import { environment } from './core/config/environment';
+import { KafkaRunner } from './core/kafka/kafka.runner';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule, {

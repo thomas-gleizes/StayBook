@@ -1,4 +1,4 @@
-import { BaseEvent } from 'src/shared/interface/base-event.interface';
+import { BaseEvent } from 'src/core/interface/base-event.interface';
 
 export class UserEditedEvent extends BaseEvent {
   constructor(
