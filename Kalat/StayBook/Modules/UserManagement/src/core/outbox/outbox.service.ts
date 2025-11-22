@@ -84,8 +84,8 @@ export class OutboxService {
       try {
         const message = JSON.parse(event.message) as DomainEvent;
 
-        await this.markMessageAsProcessed(event);
-        await this.publisher.publishEvent([this.serializer.serializeEvent(message)]);
+        // await this.markMessageAsProcessed(event);
+        // await this.publisher.publishEvent({});
       } catch (error) {
         this.logger.error(`failed to error ${error}`);
         await this.markMessageAsFailed(event, error);

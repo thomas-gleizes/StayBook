@@ -20,13 +20,13 @@ async function createUserSeeding(args: z.infer<typeof argsSchema>) {
 
   logger.log(`start user seeding ${args.total}`);
   for (let i = 0; i < args.total; i++) {
-    const random = Math.random();
-
     const aggregate = UserAggregate.create(new UserId(randomUUID()), {
-      firstName: faker.person.firstName(random > 0.5 ? 'female' : 'male'),
-      lastName: faker.person.lastName(random > 0.5 ? 'female' : 'male'),
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
       email: faker.internet.email(),
     });
+
+    aggregate.edit({ firstName: 'Edit-' + aggregate.getFirstName(), lastName: faker.person.lastName() });
 
     logger.log(
       `${i} : ${aggregate.getAggregateId()} - ${aggregate.getFirstName()} ${aggregate.getLastName()} - ${aggregate
@@ -35,8 +35,13 @@ async function createUserSeeding(args: z.infer<typeof argsSchema>) {
     );
 
     await userCommandRepository.persist(aggregate);
+
+    const re = await userCommandRepository.findById(aggregate.getAggregateId());
+    logger.log(re);
   }
   logger.log(`Done`);
 }
 
-createUserSeeding(parseArgs(argsSchema)).finally(() => process.exit(0));
+createUserSeeding(parseArgs(argsSchema))
+  .catch(console.error)
+  .finally(() => process.exit(0));

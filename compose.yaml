@@ -2,9 +2,11 @@ networks:
   staybook-net:
 
 volumes:
-  kafka-volume:
+  kafka-data:
   mongo-volume:
   postgres-volume:
+  event-store-logs:
+  event-store-data:
 
 services:
   modules_user:
@@ -21,7 +23,6 @@ services:
           - modules.user
     depends_on:
       - system_broker
-      - system_redis
       - system_postgres
     env_file:
       - path: ./Kalat/StayBook/Modules/UserManagement/.env.default
@@ -53,27 +54,87 @@ services:
       - path: ./Kalat/StayBook/System/Gateway/.env
         required: false
 
-#  system_event_store:
-#    build: .docker/node
-#    deploy:
-#      replicas: 1
-#    networks:
-#      staybook-net:
-#        aliases:
-#          - system.event_store
-#    volumes:
-#      - "./Kalat/StayBook/System/EventStore:/usr/src/app"
-#    working_dir: "/usr/src/app"
-#    command: sh -c "pnpm install --frozen-lockfile && pnpm start:dev"
-#    environment:
-#      KAFKA_BROKERS: system.broker:9092
-#      LOG_LEVEL: debug
-#      NODE_ENV: development
-#      PORT: 3000
-#      DATABASE_URL: "mongodb://system.mongodb:27017/event_store"
-#    depends_on:
-#      - system_broker
-#      - system_mongodb
+  system_schema_registry:
+    image: confluentinc/cp-schema-registry:7.6.0
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: system.broker:9092
+      SCHEMA_REGISTRY_KAFKASTORE_TOPIC: "_schemas"
+      SCHEMA_REGISTRY_KAFKASTORE_TOPIC_CREATE_NUM_PARTITIONS: 1
+      SCHEMA_REGISTRY_KAFKASTORE_TOPIC_CREATION_ENABLE: "true"
+    networks:
+      staybook-net:
+        aliases:
+          - system.schema-registry
+    depends_on:
+      - system_proxy
+      - system_broker
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.system_schema_registry.loadbalancer.server.port=8081"
+      - "traefik.http.routers.system_schema_registry.rule=Host(`schema-registry.staybook.localhost`)"
+      - "traefik.http.routers.system_schema_registry.entrypoints=web"
+
+  system_schema_build:
+    build: .docker/node
+    networks:
+      staybook-net:
+        aliases:
+          - system.schema-build
+    command: sh -c "pnpm dev"
+    working_dir: "/usr/src/app"
+    volumes:
+      - "./Kalat/StayBook/System/Contracts:/usr/src/app"
+    environment:
+      REGISTRY_URL: http://system.schema-registry:8081
+    depends_on:
+      - system_broker
+      - system_schema_registry
+
+  system_event_store:
+    image: docker.kurrent.io/kurrent-latest/kurrentdb:latest
+    environment:
+      - KURRENTDB_CLUSTER_SIZE=1
+      - KURRENTDB_INSECURE=true
+      - KURRENTDB_RUN_PROJECTIONS=All
+      - KURRENTDB_START_STANDARD_PROJECTIONS=true
+      - KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP=true
+      - KURRENTDB_NODE_PORT=2113
+    networks:
+      staybook-net:
+        aliases:
+          - system.event-store
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.system_event_store.loadbalancer.server.port=2113"
+      - "traefik.http.routers.system_event_store.rule=Host(`event-store.staybook.localhost`)"
+      - "traefik.http.routers.system_event_store.entrypoints=web"
+    volumes:
+      - event-store-data:/var/lib/kurrentdb
+      - event-store-logs:/var/log/kurrentdb
+
+  #  system_event_store:
+  #    build: .docker/node
+  #    deploy:
+  #      replicas: 1
+  #    networks:
+  #      staybook-net:
+  #        aliases:
+  #          - system.event_store
+  #    volumes:
+  #      - "./Kalat/StayBook/System/EventStore:/usr/src/app"
+  #    working_dir: "/usr/src/app"
+  #    command: sh -c "pnpm install --frozen-lockfile && pnpm start:dev"
+  #    environment:
+  #      KAFKA_BROKERS: system.broker:9092
+  #      LOG_LEVEL: debug
+  #      NODE_ENV: development
+  #      PORT: 3000
+  #      DATABASE_URL: "mongodb://system.mongodb:27017/event_store"
+  #    depends_on:
+  #      - system_broker
+  #      - system_mongodb
 
   system_proxy:
     image: traefik:latest
@@ -93,9 +154,9 @@ services:
       - "traefik.http.routers.system_proxy.service=api@internal"
 
   system_broker:
-    image: apache/kafka:4.0.0
+    image: apache/kafka:4.1.1
     volumes:
-      - kafka-volume:/var/lib/kafka/data
+      - kafka-data:/var/lib/kafka/data
     networks:
       staybook-net:
         aliases:
@@ -127,6 +188,7 @@ services:
       SERVER_SERVLET_CONTEXT_PATH: /
     depends_on:
       - system_broker
+      - system_proxy
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.system_kafka_ui.loadbalancer.server.port=8080"
@@ -146,13 +208,6 @@ services:
     volumes:
       - postgres-volume:/var/lib/postgresql/data
       - ./.docker/postgres:/docker-entrypoint-initdb.d
-
-  system_redis:
-    image: redis:8.2.3-alpine
-    networks:
-      staybook-net:
-        aliases:
-          - system.redis
 
   system_http_client:
     image: jetbrains/intellij-http-client

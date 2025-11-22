@@ -1,0 +1,23 @@
+{
+  "name": "@staybook/schemas",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "publish": "tsx script/publish.ts",
+    "dev": "tsx --watch script/publish.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "dependencies": {
+    "@kafkajs/confluent-schema-registry": "^3.9.0",
+    "protobufjs": "^7.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

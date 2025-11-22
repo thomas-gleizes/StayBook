@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
+    "@kafkajs/confluent-schema-registry": "^3.9.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",

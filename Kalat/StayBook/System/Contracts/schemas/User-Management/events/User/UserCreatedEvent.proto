@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package Kalat.Staybook.Modules.UserManagement.v1.domain.User;
+
+message UserCreatedEvent {
+  string userId = 1;
+  string firstName = 2;
+  string lastName = 3;
+  string email = 4;
+}

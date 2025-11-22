@@ -23,6 +23,8 @@ export const environmentSchema = z.object({
   INBOX_BATCH_SIZE: z.coerce.number().positive().optional(),
   INBOX_MAX_RETRY: z.coerce.number().positive().optional(),
 
+  SCHEMA_REGISTER_URL: z.url(),
+
   PROFILER: z
     .string()
     .optional()

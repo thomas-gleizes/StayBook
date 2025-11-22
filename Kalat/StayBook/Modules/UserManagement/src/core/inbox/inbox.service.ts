@@ -72,10 +72,10 @@ export class InboxService {
     for (const event of events) {
       try {
         console.log('EVENT', event);
-
-        const domainEvent = this.serializer.deserializeEvent(JSON.parse(event.message) as RawDomainEvent);
-
-        await this.projection.execute(domainEvent);
+        //
+        // const domainEvent = this.serializer.deserializeEvent(JSON.parse(event.message) as RawDomainEvent);
+        //
+        // await this.projection.execute(domainEvent);
       } catch (error) {
         this.logger.error(`Failed execute projection `, error);
       }

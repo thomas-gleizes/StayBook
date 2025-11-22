@@ -77,18 +77,18 @@ enum MessageStatus {
 
 // Event Store
 model EventStore {
-  id             String   @id
-  content_type   String   @map("content_type")
-  aggregate_type String   @map("aggregate_type")
-  aggregate_id   String   @map("aggregate_id")
-  created_at     DateTime @map("created_at")
-  created_by     String   @map("created_by")
-  version        Int
-  metadata       Json
-  state          Json
+  id            String   @id
+  contentType   String   @map("content_type")
+  aggregateType String   @map("aggregate_type")
+  aggregateId   String   @map("aggregate_id")
+  createdAt     DateTime @map("created_at")
+  createdBy     String   @map("created_by")
+  version       Int
+  metadata      Json
+  content       Bytes
 
-  @@unique([aggregate_id, version])
-  @@index([aggregate_id])
+  @@unique([aggregateId, version, aggregateType])
+  @@index([aggregateId])
   @@map("events_store")
 }
 

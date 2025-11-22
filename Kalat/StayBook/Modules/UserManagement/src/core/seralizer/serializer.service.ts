@@ -1,64 +1,53 @@
 // TODO: switch to protobuf or equivalent
 
-import { Injectable, Type } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { BaseEvent } from '../interface/base-event.interface';
 import {
-  DomainEvent,
   ErrorMessage,
-  RawData,
-  RawDomainEvent,
   RawErrorMessage,
   RawReplyMessage,
   ReplyMessage,
 } from '../messaging/messaging.interface';
 import { UserEvents } from '../../domain/events';
-import { SERVICE_FQN } from '../config/constants';
+import { SchemaRegistry } from '@kafkajs/confluent-schema-registry';
+import { environment } from '../config/environment';
 
 @Injectable()
 export class Serializer {
-  private static EVENTS = [...UserEvents];
+  private readonly logger = new Logger(Serializer.name);
+  private readonly registry: SchemaRegistry;
 
-  serializeEvent(event: DomainEvent): RawDomainEvent {
-    return {
-      id: event.id,
-      aggregate_id: event.aggregateId,
-      aggregate_type: event.aggregateType,
-      content_type: event.contentType,
-      created_by: event.createdBy,
-      metadata: event.metadata,
-      state: { ...event.state },
-      version: event.version,
-      created_at: event.createdAt.toISOString(),
-    };
+  constructor() {
+    this.registry = new SchemaRegistry({ host: environment.SCHEMA_REGISTER_URL });
   }
 
-  deserializeEvent(raw: RawDomainEvent): DomainEvent {
-    const eventName = raw.content_type.replace(`${SERVICE_FQN}.domain.`, '');
-    const eventType = Serializer.EVENTS.find((eventType) => eventType.name === eventName);
+  private static EVENTS = [...UserEvents];
 
-    console.log('EventType', eventType);
-    console.log('EventName', eventName);
-    console.log('Serializer.EVENTS', Serializer.EVENTS);
+  async serializeEvent(event: BaseEvent): Promise<Buffer> {
+    try {
+      this.logger.debug(`Serialize ${event.constructor.name}`);
 
-    if (!eventType) throw new Error('EVENT NOT deserializable');
+      const schemaId = await this.registry.getLatestSchemaId(event.constructor.name);
 
-    return {
-      id: raw.id,
-      aggregateId: raw.aggregate_id,
-      aggregateType: raw.aggregate_type,
-      contentType: raw.content_type,
-      createdAt: new Date(raw.created_at),
-      createdBy: raw.created_by,
-      metadata: raw.metadata,
-      state: this.reconstructClass(eventType, raw.state),
-      version: 0,
-    };
+      return await this.registry.encode(schemaId, event);
+    } catch (error) {
+      this.logger.error('Failed to serialize event', error);
+      throw error;
+    }
+  }
+
+  async deserializeEvent<TEvent extends BaseEvent = BaseEvent>(
+    raw: Buffer,
+    contentType: string,
+  ): Promise<TEvent> {
+    this.logger.debug(`Deserialize ${contentType}`);
+    return this.registry.decode(raw);
   }
 
   serializeReply(message: ReplyMessage<any>): RawReplyMessage {
     return {
       id: message.id,
-      content_type: message.contentType,
+      contentType: message.contentType,
       correlationId: message.correlationId,
       created_at: message.createdAt.toISOString(),
       created_by: message.createdBy,
@@ -70,21 +59,13 @@ export class Serializer {
   serializeError(message: ErrorMessage): RawErrorMessage {
     return {
       id: message.id,
-      content_type: message.contentType,
-      correlation_id: message.correlationId,
+      contentType: message.contentType,
+      correlationId: message.correlationId,
       created_at: message.createdAt.toISOString(),
       created_by: message.createdBy,
       error: message.error,
       message: message.message,
       metadata: message.metadata,
     };
-  }
-
-  reconstructClass<TEvent extends BaseEvent>(EventClass: Type<TEvent>, data: RawData): TEvent {
-    if (typeof data === 'object' && data !== null)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      return Object.assign(Object.create(EventClass.prototype), data);
-
-    return new EventClass(data);
   }
 }

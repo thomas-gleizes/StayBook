@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package Kalat.Staybook.Modules.UserManagement.v1.command.User;
+
+message EditUserCommand {
+  string userId = 1;
+  string firstName = 2;
+  string lastName = 3;
+}

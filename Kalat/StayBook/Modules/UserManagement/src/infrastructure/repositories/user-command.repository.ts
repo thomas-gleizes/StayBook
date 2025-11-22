@@ -45,7 +45,7 @@ export class UserCommandRepository
 
     const aggregate = new UserAggregate();
 
-    aggregate.loadFromHistory(events.map((event) => event.state));
+    aggregate.loadFromHistory(events.map((event) => event.content));
 
     return aggregate;
   }

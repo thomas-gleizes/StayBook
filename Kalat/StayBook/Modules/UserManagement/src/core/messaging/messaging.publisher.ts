@@ -24,10 +24,10 @@ export class MessagingPublisher {
   async publishEvent(events: RawDomainEvent[]) {
     const [event] = events;
     this.logger.debug(
-      `Publishing ${events.length} event(s) to topic "${event.aggregate_type}" for aggregate ID "${event.aggregate_id}"`,
+      `Publishing ${events.length} event(s) to topic "${event.aggregateType}" for aggregate ID "${event.aggregateId}"`,
     );
 
-    await this.producer.publish(event.aggregate_type, events, event.aggregate_id);
+    await this.producer.publish(event.aggregateType, events, event.aggregateId);
   }
 
   async publishReply<Payload = unknown>(payload: Payload, origin: ActionMessage) {

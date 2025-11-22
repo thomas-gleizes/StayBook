@@ -28,50 +28,66 @@ export class EventStoreService {
   async save<TAggregate extends AggregateRoot>(
     transaction: Prisma.TransactionClient,
     aggregate: TAggregate,
-  ): Promise<DomainEvent[]> {
+  ): Promise<void> {
     const uncommittedEvents = aggregate.getUncommittedEvents();
-    const version = aggregate.getVersion();
+    const aggregateVersion = aggregate.getVersion();
 
     const storeVersion = await transaction.eventStore.count({
-      where: { aggregate_id: aggregate.getAggregateId() },
+      where: { aggregateId: aggregate.getAggregateId() },
     });
 
-    if (version !== storeVersion) {
-      throw new ConcurrencyControlException(version, storeVersion);
+    if (aggregateVersion !== storeVersion) {
+      throw new ConcurrencyControlException(aggregateVersion, storeVersion);
     }
 
-    const storableEvents = uncommittedEvents.map<DomainEvent>((event, index) => ({
-      id: randomUUID(),
-      contentType: `${SERVICE_FQN}.domain.${event.constructor.name}`,
-      createdAt: new Date(),
-      createdBy: SERVICE_FQN,
-      metadata: {},
-      aggregateType: `${SERVICE_FQN}.domain.${aggregate.getAggregateType()}`,
-      aggregateId: aggregate.getAggregateId(),
-      version: version + index,
-      state: event,
-    }));
+    let version = aggregateVersion;
 
-    console.log('StorableEvents', storableEvents);
+    for (const event of uncommittedEvents) {
+      version += 1;
 
-    await Promise.all([
-      transaction.eventStore.createMany({
-        data: storableEvents.map((event) => this.serialize.serializeEvent(event)),
-      }),
-      this.outbox.saveEvents(transaction, storableEvents),
-    ]);
+      const id = randomUUID();
+      const date = new Date();
+      const contentType = `${SERVICE_FQN}.domain.${event.constructor.name}`;
+      const createBy = 'TODO';
 
-    return storableEvents;
+      const serialized = await this.serialize.serializeEvent(event);
+
+      await transaction.eventStore.create({
+        data: {
+          id: id,
+          aggregateId: aggregate.getAggregateId(),
+          aggregateType: aggregate.getAggregateType(),
+          contentType: contentType,
+          content: new Uint8Array(serialized),
+          createdAt: date,
+          createdBy: createBy,
+          metadata: {},
+          version: version,
+        },
+      });
+    }
   }
 
   async findEventByAggregate(aggregateId: string): Promise<DomainEvent[]> {
     const events = await this.prisma.eventStore.findMany({
-      where: { aggregate_id: aggregateId },
+      where: { aggregateId: aggregateId },
       orderBy: { version: 'asc' },
     });
 
-    // TODO: temporary: its will be fix with real serializer
-    // @ts-ignore
-    return events.map<DomainEvent>((event) => this.serialize.deserializeEvent(event));
+    const domainEvents: DomainEvent[] = [];
+    for (const event of events)
+      domainEvents.push({
+        id: event.id,
+        aggregateId: event.aggregateId,
+        aggregateType: event.aggregateType,
+        contentType: event.contentType,
+        content: await this.serialize.deserializeEvent(Buffer.from(event.content), event.contentType),
+        createdAt: event.createdAt,
+        createdBy: event.createdBy,
+        metadata: {},
+        version: event.version,
+      });
+
+    return domainEvents;
   }
 }

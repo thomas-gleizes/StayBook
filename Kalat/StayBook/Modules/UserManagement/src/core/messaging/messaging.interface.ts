@@ -5,7 +5,7 @@ export type RawData = { [key: string]: string | number | boolean | RawData | Raw
 
 export interface RawBaseMessage {
   id: string;
-  content_type: string;
+  contentType: string;
   created_at: string;
   created_by: string;
   metadata: object;
@@ -20,23 +20,23 @@ export interface BaseMessage {
 }
 
 export interface RawDomainEvent extends RawBaseMessage {
-  state: RawData;
-  aggregate_id: string;
-  aggregate_type: string;
+  aggregateId: string;
+  aggregateType: string;
+  content: Buffer<ArrayBufferLike>;
   version: number;
 }
 
-export interface DomainEvent<Event extends BaseEvent = BaseEvent> extends BaseMessage {
-  state: Event;
+export interface DomainEvent<TEvent extends BaseEvent = BaseEvent> extends BaseMessage {
   aggregateId: string;
   aggregateType: string;
+  content: TEvent;
   version: number;
 }
 
 export interface RawActionMessage extends BaseMessage {
-  correlation_id: string;
+  correlationId: string;
   payload: RawData;
-  reply_to: string;
+  replyTo: string;
 }
 
 export interface ActionMessage<Payload = unknown> extends BaseMessage {
@@ -67,5 +67,5 @@ export interface ErrorMessage extends BaseMessage {
 export interface RawErrorMessage extends RawBaseMessage {
   error: string;
   message: string;
-  correlation_id: string;
+  correlationId: string;
 }

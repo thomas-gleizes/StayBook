@@ -10,13 +10,12 @@ import { UserCommandRepository } from '../../repositories/user-command.repositor
 import { LockerModule } from '../../../core/locker/locker.module';
 import { SerializerModule } from '../../../core/seralizer/serializer.module';
 import { InboxModule } from '../../../core/inbox/inbox.module';
-import { EventPublisher } from '../../../core/event.publisher';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: (config) => validateEnvironment(config) }),
     EventStoreModule,
-    CqrsModule.forRoot({ eventPublisher: new EventPublisher() }),
+    CqrsModule.forRoot(),
     OutboxModule,
     LockerModule,
     PrismaModule,

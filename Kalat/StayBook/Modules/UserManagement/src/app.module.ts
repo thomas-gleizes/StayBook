@@ -13,7 +13,6 @@ import { InboxModule } from './core/inbox/inbox.module';
 import { SerializerModule } from './core/seralizer/serializer.module';
 import { ProjectionModule } from './core/projections/projection.module';
 import { RegistererModule } from './core/registerer/registerer.module';
-import { EventPublisher } from './core/event.publisher';
 
 @Module({
   imports: [
@@ -22,7 +21,7 @@ import { EventPublisher } from './core/event.publisher';
       validate: (config) => validateEnvironment(config),
     }),
     ScheduleModule.forRoot(),
-    CqrsModule.forRoot({ eventPublisher: new EventPublisher() }),
+    CqrsModule.forRoot(),
     RegistererModule,
     PrismaModule,
     MessagingModule,

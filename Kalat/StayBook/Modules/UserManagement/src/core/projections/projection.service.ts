@@ -29,7 +29,7 @@ export class ProjectionService implements OnModuleInit {
   }
 
   async execute(event: DomainEvent) {
-    const projection = this.projections.get(event.state.constructor.name);
+    const projection = this.projections.get(event.content.constructor.name);
 
     if (!projection) return this.logger.warn(`No projection found for ${event.contentType}`);
 
