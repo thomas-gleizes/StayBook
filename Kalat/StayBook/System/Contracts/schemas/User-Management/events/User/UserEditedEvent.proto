@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-package Kalat.Staybook.Modules.UserManagement.v1.User;
-
 message UserEditedEvent {
   string userId = 1;
   string firstName = 2;

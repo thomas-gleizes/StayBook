@@ -28,13 +28,11 @@ export class ProjectionService implements OnModuleInit {
     }
   }
 
-  async execute(event: DomainEvent) {
-    const projection = this.projections.get(event.content.constructor.name);
+  async execute<TEvent extends BaseEvent>(event: TEvent) {
+    const projection = this.projections.get(event.constructor.name);
 
-    if (!projection) return this.logger.warn(`No projection found for ${event.contentType}`);
+    if (!projection) return this.logger.warn(`No projection found for ${event.constructor.name}`);
 
-    console.log('Projection', projection);
-
-    return await Promise.resolve();
+    await projection.handler.handle(event);
   }
 }

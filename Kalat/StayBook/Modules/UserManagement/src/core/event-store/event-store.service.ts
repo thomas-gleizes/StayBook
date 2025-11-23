@@ -1,30 +1,19 @@
-import { Injectable, Type } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DomainEvent, RawDomainEvent } from '../messaging/messaging.interface';
 import { MessageStatus, MessageType, Prisma } from '../../../generated/prisma/client';
-import { BaseEvent } from '../interface/base-event.interface';
-import { Events } from '../../domain/events';
 import { randomUUID } from 'crypto';
 import { SERVICE_FQN } from '../config/constants';
-import { OutboxService } from '../outbox/outbox.service';
 import { ConcurrencyControlException } from '../../infrastructure/exceptions/concurrency-control.exception';
 import { Serializer } from '../seralizer/serializer.service';
 import { AggregateRoot } from '../interface/aggregate-root';
-import { ag } from '@faker-js/faker/dist/airline-DF6RqYmq';
 
 @Injectable()
 export class EventStoreService {
-  private readonly eventMap = new Map<string, Type<BaseEvent>>();
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly outbox: OutboxService,
     private readonly serialize: Serializer,
-  ) {
-    for (const Event of Events) {
-      this.eventMap.set(`${SERVICE_FQN}.domain.${Event.name}`, Event);
-    }
-  }
+  ) {}
 
   async save<TAggregate extends AggregateRoot>(
     transaction: Prisma.TransactionClient,
@@ -46,46 +35,41 @@ export class EventStoreService {
     for (const event of uncommittedEvents) {
       version += 1;
 
-      const eventId = randomUUID();
-      const contentType = `${SERVICE_FQN}.domain.${event.constructor.name}`;
-      const createdAt = new Date();
-      const createBy = 'TODO';
-
-      const serialized = await this.serialize.serializeEvent(event);
-
-      const message: RawDomainEvent = {
-        id: eventId,
+      const domainEvent: DomainEvent = {
+        id: randomUUID(),
         aggregateId: aggregate.getAggregateId(),
         aggregateType: aggregate.getAggregateType(),
-        content: serialized,
-        contentType: contentType,
-        createdAt: createdAt.toISOString(),
-        createdBy: createBy,
-        metadata: JSON.stringify({ tenantId: randomUUID() }),
+        content: event,
+        contentType: `${SERVICE_FQN}.domain.${event.constructor.name}`,
+        createdAt: new Date(),
+        createdBy: 'TODO',
+        metadata: { tenantId: randomUUID() },
         version: version,
       };
 
-      const fullMessage = await this.serialize.serializeMessage(message);
+      const rawDomainEvent = await this.serialize.serializeEvent(domainEvent);
 
       await transaction.eventStore.create({
         data: {
-          id: eventId,
-          aggregateId: aggregate.getAggregateId(),
-          aggregateType: aggregate.getAggregateType(),
-          contentType: contentType,
-          content: new Uint8Array(serialized),
-          createdAt: createdAt,
-          createdBy: createBy,
-          metadata: {},
-          version: version,
+          id: rawDomainEvent.id,
+          aggregateId: rawDomainEvent.aggregateId,
+          aggregateType: rawDomainEvent.aggregateType,
+          contentType: rawDomainEvent.contentType,
+          content: new Uint8Array(rawDomainEvent.content),
+          createdAt: rawDomainEvent.createdAt,
+          createdBy: rawDomainEvent.createdBy,
+          metadata: rawDomainEvent.metadata,
+          version: rawDomainEvent.version,
         },
       });
 
+      const serialized = await this.serialize.serializeMessage(rawDomainEvent);
+
       await transaction.outboxMessage.create({
         data: {
-          id: eventId,
-          correlationId: aggregate.getAggregateId(),
-          message: new Uint8Array(fullMessage),
+          id: rawDomainEvent.id,
+          correlationId: rawDomainEvent.aggregateId,
+          message: new Uint8Array(serialized),
           topic: `${SERVICE_FQN}.domain.${aggregate.getAggregateType()}`,
           status: MessageStatus.PENDING,
           type: MessageType.EVENT,
@@ -101,18 +85,21 @@ export class EventStoreService {
     });
 
     const domainEvents: DomainEvent[] = [];
-    for (const event of events)
-      domainEvents.push({
-        id: event.id,
-        aggregateId: event.aggregateId,
-        aggregateType: event.aggregateType,
-        contentType: event.contentType,
-        content: await this.serialize.deserializeEvent(Buffer.from(event.content)),
-        createdAt: event.createdAt,
-        createdBy: event.createdBy,
-        metadata: {},
-        version: event.version,
-      });
+    for (const event of events) {
+      domainEvents.push(
+        await this.serialize.deserializeEvent({
+          id: event.id,
+          aggregateId: event.aggregateId,
+          aggregateType: event.aggregateType,
+          contentType: event.contentType,
+          content: Buffer.from(event.content),
+          createdAt: event.createdAt.toISOString(),
+          createdBy: event.createdBy,
+          metadata: JSON.stringify(event.metadata),
+          version: event.version,
+        }),
+      );
+    }
 
     return domainEvents;
   }

@@ -48,6 +48,7 @@ export class OutboxService {
       const events = await transaction.outboxMessage.findMany({
         where: filters,
         take: this.config.get<number>('OUTBOX_BATCH_SIZE', 5),
+        orderBy: { createdAt: 'asc' },
       });
 
       if (!events.length) return [];
@@ -83,7 +84,7 @@ export class OutboxService {
 
     for (const event of events) {
       try {
-        await this.publisher.publish(event.topic, event.id, Buffer.from(event.message));
+        await this.publisher.publish(event.topic, event.correlationId, Buffer.from(event.message));
         await this.markMessageAsProcessed(event);
       } catch (error) {
         this.logger.error(`failed to error ${error}`);

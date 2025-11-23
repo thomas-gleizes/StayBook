@@ -1,13 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { KafkaConsumer } from './kafka.consumer';
+import { KafkaAdmin } from './kafka.admin';
 
 @Injectable()
 export class KafkaRunner {
-  private readonly logger = new Logger('Runner');
-
-  constructor(private readonly consumer: KafkaConsumer) {}
+  constructor(
+    private readonly consumer: KafkaConsumer,
+    private readonly admin: KafkaAdmin,
+  ) {}
 
   async listen() {
+    await this.admin.checkAndCreateTopics();
     await this.consumer.run();
   }
 }

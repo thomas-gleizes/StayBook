@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-package Kalat.Staybook.Modules.UserManagement.v1.command.User;
-
 message CreateUserCommand {
   string firstName = 1;
   string lastName = 2;

@@ -8,6 +8,7 @@ import { faker } from '@faker-js/faker/locale/fr';
 import { UserCommandRepository } from '../../repositories/user-command.repository';
 import { Logger } from '@nestjs/common';
 import { UserSeedingModule } from './user-seeding.module';
+import { ag } from '@faker-js/faker/dist/airline-DF6RqYmq';
 
 const argsSchema = z.object({
   total: z.number().positive().default(50),
@@ -28,6 +29,8 @@ async function createUserSeeding(args: z.infer<typeof argsSchema>) {
 
     aggregate.edit({ firstName: 'Edit-' + aggregate.getFirstName(), lastName: faker.person.lastName() });
 
+    console.log(`CREATED ${aggregate.getId()} - ${aggregate.getEmail()}`);
+
     logger.log(
       `${i} : ${aggregate.getAggregateId()} - ${aggregate.getFirstName()} ${aggregate.getLastName()} - ${aggregate
         .getEmail()
@@ -37,7 +40,8 @@ async function createUserSeeding(args: z.infer<typeof argsSchema>) {
     await userCommandRepository.persist(aggregate);
 
     const re = await userCommandRepository.findById(aggregate.getAggregateId());
-    logger.log(re);
+
+    console.log(`REBUILD ${re!.getId()} - ${re!.getEmail()}`);
   }
   logger.log(`Done`);
 }

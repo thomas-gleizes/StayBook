@@ -1,7 +1,5 @@
 syntax = 'proto3';
 
-package Kalat.Staybook.System;
-
 message Error {
   string id = 1;
   string contentType = 2;

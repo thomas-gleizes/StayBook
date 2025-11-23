@@ -1,9 +1,8 @@
 import { Injectable, Logger, OnModuleInit, Type } from '@nestjs/common';
 import { KafkaConsumer } from '../../kafka/kafka.consumer';
-import { DiscoveryService, Reflector } from '@nestjs/core';
-import { ICommand, ICommandHandler, IQuery, IQueryHandler } from '@nestjs/cqrs';
+import { ICommand, IQuery, IQueryHandler } from '@nestjs/cqrs';
 import { SERVICE_FQN } from '../../config/constants';
-import { ActionMessage, CommandMessage, QueryMessage, RawActionMessage } from '../messaging.interface';
+import { CommandMessage, RawActionMessage } from '../messaging.interface';
 import { QUERY_HANDLER_METADATA } from '@nestjs/cqrs/dist/decorators/constants';
 import { InboxService } from '../../inbox/inbox.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -39,7 +38,8 @@ export class MessagingQuerySubscriber implements OnModuleInit {
     const topics = Array.from(this.commands.keys()).map((name) => `${MessagingQuerySubscriber.FQN}${name}`);
 
     await this.consumer.subscribe<RawActionMessage>(
-      { topics, fromBeginning: true },
+      topics,
+      { fromBeginning: true },
       async (topic, message) => {
         this.logger.debug('QUERY HANDLE', topic, message);
 

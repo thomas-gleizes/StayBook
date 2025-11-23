@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BaseEvent } from '../interface/base-event.interface';
-import { RawBaseMessage } from '../messaging/messaging.interface';
+import { DomainEvent, RawBaseMessage, RawDomainEvent } from '../messaging/messaging.interface';
 import { SchemaRegistry } from '@kafkajs/confluent-schema-registry';
 import { environment } from '../config/environment';
 
@@ -12,7 +12,7 @@ export class Serializer {
     this.registry = new SchemaRegistry({ host: environment.SCHEMA_REGISTER_URL });
   }
 
-  async serializeMessage<TMessage extends RawBaseMessage>(message: TMessage) {
+  async serializeMessage<TMessage extends RawBaseMessage>(message: TMessage): Promise<Buffer> {
     const schemaId = await this.registry.getLatestSchemaId('DomainEvent');
 
     return this.registry.encode(schemaId, message);
@@ -22,13 +22,38 @@ export class Serializer {
     return this.registry.decode(buffer);
   }
 
-  async serializeEvent<TEvent extends BaseEvent>(event: TEvent): Promise<Buffer> {
-    const schemaId = await this.registry.getLatestSchemaId(event.constructor.name);
+  async serializeEvent<TEvent extends BaseEvent>(event: DomainEvent<TEvent>): Promise<RawDomainEvent> {
+    const schemaId = await this.registry.getLatestSchemaId(event.content.constructor.name);
+    const buffer = await this.registry.encode(schemaId, event.content);
 
-    return await this.registry.encode(schemaId, event);
+    return {
+      id: event.id,
+      aggregateId: event.aggregateId,
+      aggregateType: event.aggregateType,
+      content: buffer,
+      contentType: event.contentType,
+      createdAt: event.createdAt.toISOString(),
+      createdBy: event.createdBy,
+      metadata: JSON.stringify(event.metadata),
+      version: event.version,
+    };
   }
 
-  async deserializeEvent<TEvent extends BaseEvent = BaseEvent>(raw: Buffer): Promise<TEvent> {
-    return (await this.registry.decode(raw)) as TEvent;
+  async deserializeEvent<TEvent extends BaseEvent = BaseEvent>(
+    event: RawDomainEvent,
+  ): Promise<DomainEvent<TEvent>> {
+    const content = (await this.registry.decode(event.content)) as TEvent;
+
+    return {
+      id: event.id,
+      aggregateId: event.aggregateId,
+      aggregateType: event.aggregateType,
+      content: content,
+      contentType: event.contentType,
+      createdAt: new Date(event.createdAt),
+      createdBy: event.createdBy,
+      metadata: JSON.parse(event.metadata),
+      version: event.version,
+    };
   }
 }

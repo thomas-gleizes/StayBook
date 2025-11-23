@@ -28,23 +28,23 @@ export class LockerService {
     return result[0]?.locked === true;
   }
 
-  async release(ressource: Lockable): Promise<void> {
+  async release(resource: Lockable): Promise<void> {
     await this.prisma.$queryRaw`
-      SELECT pg_advisory_unlock(${ressource})
+      SELECT pg_advisory_unlock(${resource})
     `;
 
-    this.logger.verbose(`Lock release : ${ressource}`);
+    this.logger.verbose(`Lock release : ${resource}`);
   }
 
-  async run(ressource: Lockable, callback: () => Promise<void> | void): Promise<boolean> {
-    const isAcquire = await this.acquire(ressource);
+  async run(resource: Lockable, callback: () => Promise<void> | void): Promise<boolean> {
+    const isAcquire = await this.acquire(resource);
 
     if (!isAcquire) return false;
 
     try {
       await callback();
     } finally {
-      await this.release(ressource);
+      await this.release(resource);
     }
 
     return true;

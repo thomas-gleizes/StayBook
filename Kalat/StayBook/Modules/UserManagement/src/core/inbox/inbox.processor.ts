@@ -12,11 +12,11 @@ export class InboxProcessor {
 
   @Interval(5000)
   async processMessage() {
-    await this.inbox.processMessages();
+    // await this.inbox.processMessages();
   }
 
   @Interval(1000)
   async processEvents() {
-    await this.locker.run(Lockable.OUTBOX_PROCESS, () => this.inbox.processEvent());
+    // await this.locker.run(Lockable.OUTBOX_PROCESS, () => this.inbox.processEvent());
   }
 }

@@ -12,7 +12,7 @@ services:
   modules_user:
     build: .docker/node
     deploy:
-      replicas: 1
+      replicas: 3
     working_dir: "/usr/src/app"
     volumes:
       - "./Kalat/StayBook/Modules/UserManagement:/usr/src/app"
@@ -83,7 +83,7 @@ services:
       staybook-net:
         aliases:
           - system.schema-build
-    command: sh -c "pnpm install --frozen-lockfile && pnpm run register"
+    command: sh -c "sleep infinity && pnpm install --frozen-lockfile && pnpm run register"
     working_dir: "/usr/src/app"
     volumes:
       - "./Kalat/StayBook/System/Contracts:/usr/src/app"

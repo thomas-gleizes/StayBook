@@ -5,6 +5,7 @@ import { KAFKA_BROKER } from './kafka.token';
 import { KafkaProducer } from './kafka.producer';
 import { KafkaConsumer } from './kafka.consumer';
 import { KafkaRunner } from './kafka.runner';
+import { KafkaAdmin } from './kafka.admin';
 
 @Module({
   providers: [
@@ -16,6 +17,7 @@ import { KafkaRunner } from './kafka.runner';
           brokers: config.getOrThrow('KAFKA_BROKERS'),
         }),
     },
+    KafkaAdmin,
     KafkaProducer,
     KafkaConsumer,
     KafkaRunner,

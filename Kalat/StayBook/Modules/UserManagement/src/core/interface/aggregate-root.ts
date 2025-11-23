@@ -9,7 +9,6 @@ export abstract class AggregateRoot<TBase extends BaseEvent = BaseEvent> extends
   }
 
   loadFromHistory(history: TBase[]) {
-    console.log('History', history);
     super.loadFromHistory(history);
 
     this.version += history.length;
