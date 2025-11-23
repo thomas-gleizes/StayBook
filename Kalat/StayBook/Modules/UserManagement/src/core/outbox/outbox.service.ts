@@ -21,7 +21,8 @@ export class OutboxService {
     await transaction.outboxMessage.createMany({
       data: events.map<Prisma.OutboxMessageCreateManyInput>((event) => ({
         id: event.id,
-        message: JSON.stringify(event),
+        correlationId: event.aggregateId,
+        message: new Uint8Array([]),
         topic: event.aggregateType,
         type: 'EVENT',
         status: 'PENDING',
@@ -35,10 +36,10 @@ export class OutboxService {
         type: { in: types },
         OR: [
           { status: 'PENDING' },
-          { status: 'PROCESSING', startProcessingAt: { lte: new Date(Date.now() - 30_000) } },
+          { status: 'PROCESSING', startProcessingAt: { lte: new Date(Date.now() - 1_000) } },
           {
             status: 'FAILED',
-            startProcessingAt: { lte: new Date(Date.now() - 30_000) },
+            startProcessingAt: { lte: new Date(Date.now() - 1_000) },
             retry: { lte: this.config.get<number>('OUTBOX_MAX_RETRY', 5) },
           },
         ],
@@ -78,14 +79,12 @@ export class OutboxService {
 
     if (!events.length) return this.logger.verbose('No events to process');
 
-    this.logger.verbose(`Process ${events.length}`);
+    this.logger.log(`Processing ${events.length} events...`);
 
     for (const event of events) {
       try {
-        const message = JSON.parse(event.message) as DomainEvent;
-
-        // await this.markMessageAsProcessed(event);
-        // await this.publisher.publishEvent({});
+        await this.publisher.publish(event.topic, event.id, Buffer.from(event.message));
+        await this.markMessageAsProcessed(event);
       } catch (error) {
         this.logger.error(`failed to error ${error}`);
         await this.markMessageAsFailed(event, error);
@@ -104,7 +103,7 @@ export class OutboxService {
   async markMessageAsFailed(event: OutboxMessage, error: Error) {
     await this.prisma.outboxMessage.update({
       where: { id: event.id },
-      data: { status: 'FAILED', message: error.message, retry: { increment: 1 } },
+      data: { status: 'FAILED', error: error.message, retry: { increment: 1 } },
     });
   }
 

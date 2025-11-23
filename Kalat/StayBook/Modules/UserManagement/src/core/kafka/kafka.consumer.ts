@@ -2,9 +2,10 @@ import { Consumer, Kafka } from 'kafkajs';
 import { Inject, Logger } from '@nestjs/common';
 import { KAFKA_BROKER } from './kafka.token';
 import { SERVICE_FQN } from '../config/constants';
-import { BaseMessage } from '../messaging/messaging.interface';
+import { BaseMessage, RawBaseMessage } from '../messaging/messaging.interface';
+import { Serializer } from '../seralizer/serializer.service';
 
-export type MessageHandler<TMessage extends BaseMessage> = (
+export type MessageHandler<TMessage extends RawBaseMessage> = (
   topic: string,
   message: TMessage,
 ) => Promise<void> | void;
@@ -12,11 +13,12 @@ export type MessageHandler<TMessage extends BaseMessage> = (
 export class KafkaConsumer {
   private readonly logger = new Logger('Consumer');
   private readonly consumer: Consumer;
-  private readonly handlers = new Map<string, MessageHandler<BaseMessage>>();
+  private readonly handlers = new Map<string, MessageHandler<RawBaseMessage>>();
 
   constructor(
     @Inject(KAFKA_BROKER)
     broker: Kafka,
+    private readonly serializer: Serializer,
   ) {
     this.consumer = broker.consumer({
       groupId: SERVICE_FQN,
@@ -25,7 +27,7 @@ export class KafkaConsumer {
     });
   }
 
-  async subscribe<TMessage extends BaseMessage>(
+  async subscribe<TMessage extends RawBaseMessage>(
     options: { topics: string[]; fromBeginning: boolean },
     handler: MessageHandler<TMessage>,
   ) {
@@ -43,13 +45,13 @@ export class KafkaConsumer {
     await this.consumer.run({
       autoCommit: false,
       eachMessage: async ({ topic, message, partition, heartbeat }) => {
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        const interval = setInterval(() => heartbeat(), 5000);
+        const interval = setInterval(() => void heartbeat(), 5000);
 
         try {
           if (!message.value) return;
 
-          const value = JSON.parse(message.value.toString()) as BaseMessage;
+          const value = await this.serializer.deserializeMessage(message.value);
+
           const handler = this.handlers.get(topic);
           if (!handler) return this.logger.warn(`NO HANDLER FOUND FOR '${topic}'`);
 

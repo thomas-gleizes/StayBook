@@ -19,8 +19,6 @@ export class InboxService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
-    private readonly projection: ProjectionService,
-    private readonly serializer: Serializer,
   ) {}
 
   async saveMessages<Message extends BaseMessage>(

@@ -15,6 +15,6 @@ export function Projection<T extends BaseEvent>(eventClass: new (...args: any[])
   };
 }
 
-export interface IProjectionHandler<Event extends BaseEvent> {
-  handle(event: DomainEvent<Event>): Promise<void>;
+export interface IProjectionHandler<TEvent extends BaseEvent = BaseEvent> {
+  handle(event: TEvent): Promise<void>;
 }

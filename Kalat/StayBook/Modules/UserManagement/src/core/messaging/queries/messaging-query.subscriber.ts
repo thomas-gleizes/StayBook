@@ -1,14 +1,13 @@
 import { Injectable, Logger, OnModuleInit, Type } from '@nestjs/common';
 import { KafkaConsumer } from '../../kafka/kafka.consumer';
 import { DiscoveryService, Reflector } from '@nestjs/core';
-import { COMMAND_HANDLER_METADATA } from '@nestjs/cqrs/dist/utils/constants';
 import { ICommand, ICommandHandler, IQuery, IQueryHandler } from '@nestjs/cqrs';
 import { SERVICE_FQN } from '../../config/constants';
-import { CommandMessage, QueryMessage } from '../messaging.interface';
-import { MessagingPublisher } from '../messaging.publisher';
+import { ActionMessage, CommandMessage, QueryMessage, RawActionMessage } from '../messaging.interface';
 import { QUERY_HANDLER_METADATA } from '@nestjs/cqrs/dist/decorators/constants';
 import { InboxService } from '../../inbox/inbox.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RegistererService } from '../../registerer/registerer.service';
 
 @Injectable()
 export class MessagingQuerySubscriber implements OnModuleInit {
@@ -19,10 +18,9 @@ export class MessagingQuerySubscriber implements OnModuleInit {
 
   constructor(
     private readonly consumer: KafkaConsumer,
-    private readonly discoveryService: DiscoveryService,
-    private readonly reflector: Reflector,
     private readonly inbox: InboxService,
     private readonly prisma: PrismaService,
+    private readonly registerer: RegistererService,
   ) {}
 
   async onModuleInit() {
@@ -31,30 +29,23 @@ export class MessagingQuerySubscriber implements OnModuleInit {
   }
 
   private register() {
-    const providers = this.discoveryService.getProviders();
+    const providers = this.registerer.findByMetadata<Type<IQuery>>(QUERY_HANDLER_METADATA);
 
-    for (const provider of providers) {
-      if (provider.metatype) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const metadata = this.reflector.get(QUERY_HANDLER_METADATA, provider.metatype);
-
-        if (metadata) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          this.commands.set(metadata.name, { instance: metadata, handler: provider.instance });
-        }
-      }
-    }
+    for (const [handler, query] of providers)
+      this.commands.set(query.name, { instance: query, handler: handler.instance });
   }
 
   private async subscribe() {
     const topics = Array.from(this.commands.keys()).map((name) => `${MessagingQuerySubscriber.FQN}${name}`);
 
-    await this.consumer.subscribe<QueryMessage<any>>(
+    await this.consumer.subscribe<RawActionMessage>(
       { topics, fromBeginning: true },
       async (topic, message) => {
+        this.logger.debug('QUERY HANDLE', topic, message);
+
         try {
           await this.prisma.$transaction(async (transaction) => {
-            await this.inbox.saveQuery(transaction, [message]);
+            // await this.inbox.saveQuery(transaction, [message]);
           });
         } catch (error) {
           console.log('Error', error);

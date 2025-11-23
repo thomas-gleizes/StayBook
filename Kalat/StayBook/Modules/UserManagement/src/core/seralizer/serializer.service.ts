@@ -1,71 +1,34 @@
-// TODO: switch to protobuf or equivalent
-
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { BaseEvent } from '../interface/base-event.interface';
-import {
-  ErrorMessage,
-  RawErrorMessage,
-  RawReplyMessage,
-  ReplyMessage,
-} from '../messaging/messaging.interface';
-import { UserEvents } from '../../domain/events';
+import { RawBaseMessage } from '../messaging/messaging.interface';
 import { SchemaRegistry } from '@kafkajs/confluent-schema-registry';
 import { environment } from '../config/environment';
 
 @Injectable()
 export class Serializer {
-  private readonly logger = new Logger(Serializer.name);
   private readonly registry: SchemaRegistry;
 
   constructor() {
     this.registry = new SchemaRegistry({ host: environment.SCHEMA_REGISTER_URL });
   }
 
-  private static EVENTS = [...UserEvents];
+  async serializeMessage<TMessage extends RawBaseMessage>(message: TMessage) {
+    const schemaId = await this.registry.getLatestSchemaId('DomainEvent');
 
-  async serializeEvent(event: BaseEvent): Promise<Buffer> {
-    try {
-      this.logger.debug(`Serialize ${event.constructor.name}`);
-
-      const schemaId = await this.registry.getLatestSchemaId(event.constructor.name);
-
-      return await this.registry.encode(schemaId, event);
-    } catch (error) {
-      this.logger.error('Failed to serialize event', error);
-      throw error;
-    }
+    return this.registry.encode(schemaId, message);
   }
 
-  async deserializeEvent<TEvent extends BaseEvent = BaseEvent>(
-    raw: Buffer,
-    contentType: string,
-  ): Promise<TEvent> {
-    this.logger.debug(`Deserialize ${contentType}`);
-    return this.registry.decode(raw);
+  async deserializeMessage<TMessage extends RawBaseMessage>(buffer: Buffer): Promise<TMessage> {
+    return this.registry.decode(buffer);
   }
 
-  serializeReply(message: ReplyMessage<any>): RawReplyMessage {
-    return {
-      id: message.id,
-      contentType: message.contentType,
-      correlationId: message.correlationId,
-      created_at: message.createdAt.toISOString(),
-      created_by: message.createdBy,
-      metadata: message.metadata,
-      payload: { ...message.payload },
-    };
+  async serializeEvent<TEvent extends BaseEvent>(event: TEvent): Promise<Buffer> {
+    const schemaId = await this.registry.getLatestSchemaId(event.constructor.name);
+
+    return await this.registry.encode(schemaId, event);
   }
 
-  serializeError(message: ErrorMessage): RawErrorMessage {
-    return {
-      id: message.id,
-      contentType: message.contentType,
-      correlationId: message.correlationId,
-      created_at: message.createdAt.toISOString(),
-      created_by: message.createdBy,
-      error: message.error,
-      message: message.message,
-      metadata: message.metadata,
-    };
+  async deserializeEvent<TEvent extends BaseEvent = BaseEvent>(raw: Buffer): Promise<TEvent> {
+    return (await this.registry.decode(raw)) as TEvent;
   }
 }

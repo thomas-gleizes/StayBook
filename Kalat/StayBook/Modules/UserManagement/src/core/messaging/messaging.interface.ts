@@ -1,14 +1,13 @@
 import { BaseEvent } from '../interface/base-event.interface';
-import { s } from '@faker-js/faker/dist/airline-DF6RqYmq';
 
 export type RawData = { [key: string]: string | number | boolean | RawData | RawData[] };
 
 export interface RawBaseMessage {
   id: string;
   contentType: string;
-  created_at: string;
-  created_by: string;
-  metadata: object;
+  createdAt: string;
+  createdBy: string;
+  metadata: string;
 }
 
 export interface BaseMessage {
@@ -22,7 +21,7 @@ export interface BaseMessage {
 export interface RawDomainEvent extends RawBaseMessage {
   aggregateId: string;
   aggregateType: string;
-  content: Buffer<ArrayBufferLike>;
+  content: Buffer;
   version: number;
 }
 
@@ -33,9 +32,9 @@ export interface DomainEvent<TEvent extends BaseEvent = BaseEvent> extends BaseM
   version: number;
 }
 
-export interface RawActionMessage extends BaseMessage {
+export interface RawActionMessage extends RawBaseMessage {
   correlationId: string;
-  payload: RawData;
+  payload: Buffer;
   replyTo: string;
 }
 
@@ -55,7 +54,7 @@ export interface ReplyMessage<Payload> extends BaseMessage {
 
 export interface RawReplyMessage extends RawBaseMessage {
   correlationId: string;
-  payload: RawData;
+  payload: Buffer;
 }
 
 export interface ErrorMessage extends BaseMessage {

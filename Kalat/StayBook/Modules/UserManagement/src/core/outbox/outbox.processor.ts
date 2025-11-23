@@ -34,6 +34,6 @@ export class OutboxProcessor {
   async clearMessage() {
     if (!this.isEnable) return;
 
-    await this.locker.run(Lockable.OUTBOX_CLEAR, () => this.outbox.clearMessages());
+    // await this.locker.run(Lockable.OUTBOX_CLEAR, () => this.outbox.clearMessages());
   }
 }

@@ -19,12 +19,12 @@ export class KafkaProducer implements OnModuleInit {
     await this.producer.connect();
   }
 
-  async publish<M extends RawBaseMessage>(topic: string, messages: M[], key: string) {
+  async publish(topic: string, key: string, messages: Buffer[]) {
     this.logger.debug(topic);
 
     await this.producer.send({
       topic,
-      messages: messages.map((message) => ({ key: key, value: JSON.stringify(message) })),
+      messages: messages.map((message) => ({ key: key, value: message })),
     });
   }
 }

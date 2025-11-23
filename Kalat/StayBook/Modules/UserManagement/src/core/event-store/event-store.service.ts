@@ -1,7 +1,7 @@
 import { Injectable, Type } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { DomainEvent } from '../messaging/messaging.interface';
-import { Prisma } from '../../../generated/prisma/client';
+import { DomainEvent, RawDomainEvent } from '../messaging/messaging.interface';
+import { MessageStatus, MessageType, Prisma } from '../../../generated/prisma/client';
 import { BaseEvent } from '../interface/base-event.interface';
 import { Events } from '../../domain/events';
 import { randomUUID } from 'crypto';
@@ -10,6 +10,7 @@ import { OutboxService } from '../outbox/outbox.service';
 import { ConcurrencyControlException } from '../../infrastructure/exceptions/concurrency-control.exception';
 import { Serializer } from '../seralizer/serializer.service';
 import { AggregateRoot } from '../interface/aggregate-root';
+import { ag } from '@faker-js/faker/dist/airline-DF6RqYmq';
 
 @Injectable()
 export class EventStoreService {
@@ -45,24 +46,49 @@ export class EventStoreService {
     for (const event of uncommittedEvents) {
       version += 1;
 
-      const id = randomUUID();
-      const date = new Date();
+      const eventId = randomUUID();
       const contentType = `${SERVICE_FQN}.domain.${event.constructor.name}`;
+      const createdAt = new Date();
       const createBy = 'TODO';
 
       const serialized = await this.serialize.serializeEvent(event);
 
+      const message: RawDomainEvent = {
+        id: eventId,
+        aggregateId: aggregate.getAggregateId(),
+        aggregateType: aggregate.getAggregateType(),
+        content: serialized,
+        contentType: contentType,
+        createdAt: createdAt.toISOString(),
+        createdBy: createBy,
+        metadata: JSON.stringify({ tenantId: randomUUID() }),
+        version: version,
+      };
+
+      const fullMessage = await this.serialize.serializeMessage(message);
+
       await transaction.eventStore.create({
         data: {
-          id: id,
+          id: eventId,
           aggregateId: aggregate.getAggregateId(),
           aggregateType: aggregate.getAggregateType(),
           contentType: contentType,
           content: new Uint8Array(serialized),
-          createdAt: date,
+          createdAt: createdAt,
           createdBy: createBy,
           metadata: {},
           version: version,
+        },
+      });
+
+      await transaction.outboxMessage.create({
+        data: {
+          id: eventId,
+          correlationId: aggregate.getAggregateId(),
+          message: new Uint8Array(fullMessage),
+          topic: `${SERVICE_FQN}.domain.${aggregate.getAggregateType()}`,
+          status: MessageStatus.PENDING,
+          type: MessageType.EVENT,
         },
       });
     }
@@ -81,7 +107,7 @@ export class EventStoreService {
         aggregateId: event.aggregateId,
         aggregateType: event.aggregateType,
         contentType: event.contentType,
-        content: await this.serialize.deserializeEvent(Buffer.from(event.content), event.contentType),
+        content: await this.serialize.deserializeEvent(Buffer.from(event.content)),
         createdAt: event.createdAt,
         createdBy: event.createdBy,
         metadata: {},

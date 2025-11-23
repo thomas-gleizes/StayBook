@@ -12,7 +12,7 @@ services:
   modules_user:
     build: .docker/node
     deploy:
-      replicas: 2
+      replicas: 1
     working_dir: "/usr/src/app"
     volumes:
       - "./Kalat/StayBook/Modules/UserManagement:/usr/src/app"
@@ -24,6 +24,7 @@ services:
     depends_on:
       - system_broker
       - system_postgres
+      - system_schema_registry
     env_file:
       - path: ./Kalat/StayBook/Modules/UserManagement/.env.default
         required: true
@@ -82,7 +83,7 @@ services:
       staybook-net:
         aliases:
           - system.schema-build
-    command: sh -c "pnpm dev"
+    command: sh -c "pnpm install --frozen-lockfile && pnpm run register"
     working_dir: "/usr/src/app"
     volumes:
       - "./Kalat/StayBook/System/Contracts:/usr/src/app"
@@ -113,28 +114,6 @@ services:
     volumes:
       - event-store-data:/var/lib/kurrentdb
       - event-store-logs:/var/log/kurrentdb
-
-  #  system_event_store:
-  #    build: .docker/node
-  #    deploy:
-  #      replicas: 1
-  #    networks:
-  #      staybook-net:
-  #        aliases:
-  #          - system.event_store
-  #    volumes:
-  #      - "./Kalat/StayBook/System/EventStore:/usr/src/app"
-  #    working_dir: "/usr/src/app"
-  #    command: sh -c "pnpm install --frozen-lockfile && pnpm start:dev"
-  #    environment:
-  #      KAFKA_BROKERS: system.broker:9092
-  #      LOG_LEVEL: debug
-  #      NODE_ENV: development
-  #      PORT: 3000
-  #      DATABASE_URL: "mongodb://system.mongodb:27017/event_store"
-  #    depends_on:
-  #      - system_broker
-  #      - system_mongodb
 
   system_proxy:
     image: traefik:latest

@@ -27,11 +27,12 @@ model User {
 // Outbox & Inbox Messages
 model OutboxMessage {
   id                String        @id
-  message           String
+  correlationId     String        @map("correlation_id")
   topic             String
   type              MessageType
   status            MessageStatus @default(PENDING)
   createdAt         DateTime      @default(now()) @map("created_at")
+  message           Bytes
   startProcessingAt DateTime?     @map("start_processing_at")
   processedAt       DateTime?     @map("processed_at")
   retry             Int?
