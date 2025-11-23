@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package Kalat.StayBook.System;
+
+message Command {
+  string id = 1;
+  string contentType = 2;
+  string createdAt = 3;
+  string createdBy = 4;
+  string metadata = 5;
+  string correlationId = 6;
+  string payload = 7;
+}

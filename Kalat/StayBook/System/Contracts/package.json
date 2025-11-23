@@ -13,7 +13,8 @@
   "packageManager": "pnpm@10.13.1",
   "dependencies": {
     "@kafkajs/confluent-schema-registry": "^3.9.0",
-    "protobufjs": "^7.5.4"
+    "protobufjs": "^7.5.4",
+    "ts-proto": "^2.8.3"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
