@@ -9,22 +9,50 @@ volumes:
   event-store-data:
 
 services:
-  modules_user:
+  modules_user_management:
     build: .docker/node
     deploy:
-      replicas: 3
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1"
     working_dir: "/usr/src/app"
     volumes:
       - "./Kalat/StayBook/Modules/UserManagement:/usr/src/app"
+      - "./Kalat/StayBook/Packages:/usr/src/packages"
     command: sh -c "pnpm start:dev"
     networks:
       staybook-net:
         aliases:
-          - modules.user
+          - modules.user-management
     depends_on:
       - system_broker
       - system_postgres
       - system_schema_registry
+    env_file:
+      - path: ./Kalat/StayBook/Modules/UserManagement/.env.default
+        required: true
+      - path: ./Kalat/StayBook/Modules/UserManagement/.env
+        required: false
+
+  modules_housing:
+    build: .docker/node
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1"
+    working_dir: "/usr/src/app"
+    volumes:
+      - "./Kalat/StayBook/Modules/Housing:/usr/src/app"
+      - "./Kalat/StayBook/Packages:/usr/src/packages"
+    command: sh -c "sleep infinity && pnpm start:dev"
+    networks:
+      staybook-net:
+        aliases:
+          - modules.housing
+    depends_on:
+      - system_broker
     env_file:
       - path: ./Kalat/StayBook/Modules/UserManagement/.env.default
         required: true
@@ -120,7 +148,7 @@ services:
     networks:
       staybook-net:
         aliases:
-          - kmotion-traefik
+          - system.proxy
     ports:
       - "80:80"
     volumes:

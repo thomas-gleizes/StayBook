@@ -1,15 +1,17 @@
-import { Consumer, Kafka } from 'kafkajs';
+import { Consumer, IHeaders, Kafka } from 'kafkajs';
 import { Inject, Logger } from '@nestjs/common';
 import { KAFKA_BROKER } from './kafka.token';
 import { SERVICE_FQN } from '../config/constants';
 import { BaseMessage, RawBaseMessage } from '../messaging/messaging.interface';
 import { Serializer } from '../seralizer/serializer.service';
 import { options } from 'yargs';
+import { environment } from '../config/environment';
 
-export type MessageHandler<TMessage extends RawBaseMessage> = (
-  topic: string,
-  message: TMessage,
-) => Promise<void> | void;
+export type MessageHandler<TMessage extends RawBaseMessage> = (message: {
+  topic: string;
+  value: TMessage;
+  headers: Record<string, string | boolean | number>;
+}) => Promise<void> | void;
 
 export type ConsumerOptions = {
   fromBeginning: boolean;
@@ -55,20 +57,25 @@ export class KafkaConsumer {
     await this.consumer.connect();
     await this.consumer.run({
       autoCommit: false,
+      partitionsConsumedConcurrently: environment.KAFKA_PARTITION_CONSUME_CONCURRENCY,
       eachMessage: async ({ topic, message, partition, heartbeat }) => {
         const interval = setInterval(() => void heartbeat(), 5000);
 
         try {
           if (!message.value) return;
 
-          this.logger.debug(`Consume - ${topic}`);
+          this.logger.debug(`Consume - ${topic}, (partition = ${partition}, offset = ${message.offset})`);
 
           const value = await this.serializer.deserializeMessage(message.value);
 
           const handler = this.handlers.get(topic);
           if (!handler) return this.logger.warn(`NO HANDLER FOUND FOR '${topic}'`);
 
-          await handler.handler(topic, value);
+          const headers = this.parseHeaders(message.headers);
+
+          value.metadata = JSON.stringify(headers);
+
+          await handler.handler({ topic, value, headers });
           await this.consumer.commitOffsets([
             { topic, partition, offset: (Number(message.offset) + 1).toString() },
           ]);
@@ -79,5 +86,17 @@ export class KafkaConsumer {
         }
       },
     });
+  }
+
+  private parseHeaders(headers?: IHeaders): { [key: string]: string | boolean | number } {
+    if (!headers) return {};
+
+    const parsed = {};
+
+    for (const [key, value] of Object.entries(headers)) {
+      if (value) parsed[key] = value?.toString();
+    }
+
+    return parsed;
   }
 }

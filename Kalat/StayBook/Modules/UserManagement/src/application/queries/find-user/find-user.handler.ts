@@ -16,6 +16,8 @@ export class FindUserHandler implements IQueryHandler<FindUserQuery> {
   ) {}
 
   async execute(query: FindUserQuery): Promise<UserView> {
+    console.log('QUERY', query);
+
     const user = await this.queryRepository.findById(query.userId);
 
     if (!user) throw new UserNotFoundException();

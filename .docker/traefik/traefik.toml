@@ -11,5 +11,5 @@
 
 [providers.docker]
   exposedByDefault = false
-  network = "staybnb-net"
+  network = "staybook-net"
   watch = true

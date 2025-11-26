@@ -42,8 +42,8 @@ export class MessagingCommandSubscriber implements OnModuleInit {
     await this.consumer.subscribe<RawActionMessage>(
       topics,
       { fromBeginning: true },
-      async (topic, message) => {
-        this.logger.debug('Command Handle', topic, message);
+      async ({ topic, value }) => {
+        this.logger.debug('Command Handle', topic, value);
         try {
           // await this.prisma.$transaction(async (transaction) => {
           //   await this.inbox.saveCommand(transaction, [message]);

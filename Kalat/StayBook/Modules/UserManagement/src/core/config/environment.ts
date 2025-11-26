@@ -5,8 +5,10 @@ import 'dotenv/config';
 export const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test', 'provision']).default('development'),
   LOG_LEVEL: z.string().transform((value) => value.split(',') as LogLevel[]),
-  KAFKA_BROKERS: z.string().transform((value) => value.split(',')),
   DATABASE_URL: z.url(),
+
+  KAFKA_BROKERS: z.string().transform((value) => value.split(',')),
+  KAFKA_PARTITION_CONSUME_CONCURRENCY: z.coerce.number().positive().default(1).optional(),
 
   SNAPSHOT: z.coerce.number().min(50).optional().default(100),
 

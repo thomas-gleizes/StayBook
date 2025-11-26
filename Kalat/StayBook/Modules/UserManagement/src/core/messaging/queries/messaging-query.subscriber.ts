@@ -1,12 +1,16 @@
 import { Injectable, Logger, OnModuleInit, Type } from '@nestjs/common';
 import { KafkaConsumer } from '../../kafka/kafka.consumer';
-import { ICommand, IQuery, IQueryHandler } from '@nestjs/cqrs';
+import { ICommand, IQuery, IQueryHandler, QueryBus } from '@nestjs/cqrs';
 import { SERVICE_FQN } from '../../config/constants';
 import { CommandMessage, RawActionMessage } from '../messaging.interface';
 import { QUERY_HANDLER_METADATA } from '@nestjs/cqrs/dist/decorators/constants';
 import { InboxService } from '../../inbox/inbox.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RegistererService } from '../../registerer/registerer.service';
+import { Serializer } from '../../seralizer/serializer.service';
+import { FindUserQuery } from '../../../application/queries/find-user/find-user.query';
+import { MessagingPublisher } from '../messaging.publisher';
+import errorMap from 'zod/v3/locales/en';
 
 @Injectable()
 export class MessagingQuerySubscriber implements OnModuleInit {
@@ -16,10 +20,11 @@ export class MessagingQuerySubscriber implements OnModuleInit {
   private static FQN = `${SERVICE_FQN}.query.`;
 
   constructor(
+    private readonly queryBus: QueryBus,
+    private readonly serializer: Serializer,
     private readonly consumer: KafkaConsumer,
-    private readonly inbox: InboxService,
-    private readonly prisma: PrismaService,
     private readonly registerer: RegistererService,
+    private readonly publisher: MessagingPublisher,
   ) {}
 
   async onModuleInit() {
@@ -40,26 +45,19 @@ export class MessagingQuerySubscriber implements OnModuleInit {
     await this.consumer.subscribe<RawActionMessage>(
       topics,
       { fromBeginning: true },
-      async (topic, message) => {
-        this.logger.debug('QUERY HANDLE', topic, message);
+      async ({ topic, value, headers }) => {
+        const parsedMessage = await this.serializer.deserializeQuery(value);
+
+        this.logger.debug('QUERY HANDLE', topic, parsedMessage, headers);
 
         try {
-          await this.prisma.$transaction(async (transaction) => {
-            // await this.inbox.saveQuery(transaction, [message]);
-          });
-        } catch (error) {
-          console.log('Error', error);
-          throw error;
+          const result = await this.queryBus.execute(parsedMessage.payload);
+
+          await this.publisher.publishReply(parsedMessage, result);
+        } catch (e) {
+          await this.publisher.publishReply(parsedMessage, { error: e.message });
         }
       },
     );
-  }
-
-  private reconstructClass(Command: Type<ICommand>, value: CommandMessage<any>['payload']): ICommand {
-    if (typeof value === 'object' && value !== null)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      return Object.assign(Object.create(Command.prototype), value);
-
-    return new Command(value);
   }
 }

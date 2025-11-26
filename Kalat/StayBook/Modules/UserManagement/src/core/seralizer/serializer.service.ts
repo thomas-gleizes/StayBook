@@ -1,8 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { BaseEvent } from '../interface/base-event.interface';
-import { DomainEvent, RawBaseMessage, RawDomainEvent } from '../messaging/messaging.interface';
+import {
+  DomainEvent,
+  QueryMessage,
+  RawActionMessage,
+  RawBaseMessage,
+  RawDomainEvent,
+} from '../messaging/messaging.interface';
 import { SchemaRegistry } from '@kafkajs/confluent-schema-registry';
 import { environment } from '../config/environment';
+import { IQuery } from '@nestjs/cqrs';
 
 @Injectable()
 export class Serializer {
@@ -40,20 +47,37 @@ export class Serializer {
   }
 
   async deserializeEvent<TEvent extends BaseEvent = BaseEvent>(
-    event: RawDomainEvent,
+    message: RawDomainEvent,
   ): Promise<DomainEvent<TEvent>> {
-    const content = (await this.registry.decode(event.content)) as TEvent;
+    const content = (await this.registry.decode(message.content)) as TEvent;
 
     return {
-      id: event.id,
-      aggregateId: event.aggregateId,
-      aggregateType: event.aggregateType,
+      id: message.id,
+      aggregateId: message.aggregateId,
+      aggregateType: message.aggregateType,
       content: content,
-      contentType: event.contentType,
-      createdAt: new Date(event.createdAt),
-      createdBy: event.createdBy,
-      metadata: JSON.parse(event.metadata),
-      version: event.version,
+      contentType: message.contentType,
+      createdAt: new Date(message.createdAt),
+      createdBy: message.createdBy,
+      metadata: JSON.parse(message.metadata),
+      version: message.version,
+    };
+  }
+
+  async deserializeQuery<TQuery extends IQuery = IQuery>(
+    message: RawActionMessage,
+  ): Promise<QueryMessage<TQuery>> {
+    const payload = (await this.registry.decode(message.payload)) as TQuery;
+
+    return {
+      id: message.id,
+      contentType: message.contentType,
+      correlationId: message.correlationId,
+      createdAt: new Date(message.createdAt),
+      createdBy: message.createdBy,
+      metadata: JSON.parse(message.metadata),
+      payload: payload,
+      replyTo: message.replyTo,
     };
   }
 }

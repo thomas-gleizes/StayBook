@@ -44,7 +44,7 @@ export class UserManagementController {
   @ApiOperation({ summary: 'Create a user' })
   @ApiAcceptedResponse()
   async create(@Body() body: CreateUserBodyDto) {
-    const topic = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1alpha.command.CreateUserCommand`;
+    const topic = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1.command.CreateUserCommand`;
 
     const command: CommandMessage<any> = {
       id: randomUUID(),
@@ -71,7 +71,7 @@ export class UserManagementController {
   @ApiOperation({ summary: 'Create a user' })
   @ApiAcceptedResponse()
   async edit(@Param('id') userId: string, @Body() body: EditUserBodyDto) {
-    const topic = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1alpha.command.EditUserCommand`;
+    const topic = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1.command.EditUserCommand`;
 
     const command: CommandMessage<any> = {
       id: randomUUID(),
@@ -97,7 +97,7 @@ export class UserManagementController {
   @ApiOperation({ summary: 'Find user by ID' })
   @ApiOkResponse()
   async findById(@Param('id') userId: string) {
-    const topic = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1alpha.query.FindUserQuery`;
+    const topic = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1.query.FindUserQuery`;
 
     const query: QueryMessage<any> = {
       id: randomUUID(),

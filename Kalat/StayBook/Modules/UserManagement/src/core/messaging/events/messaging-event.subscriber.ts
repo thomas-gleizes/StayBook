@@ -29,10 +29,10 @@ export class MessagingEventSubscriber implements OnModuleInit {
 
     this.logger.log(`Listen to topics: ${topics.join(', ')}`);
 
-    await this.consumer.subscribe<RawDomainEvent>(topics, { fromBeginning: true }, async (topic, message) => {
-      const event = await this.serializer.deserializeEvent(message);
+    await this.consumer.subscribe<RawDomainEvent>(topics, { fromBeginning: true }, async ({ value }) => {
+      const event = await this.serializer.deserializeEvent(value);
 
-      this.logger.debug(`Handle - ${message.contentType} - ${message.id}`, event);
+      this.logger.debug(`Handle - ${event.contentType} - ${event.aggregateId} - ${event.version}`);
 
       await this.projections.execute(event.content);
     });
