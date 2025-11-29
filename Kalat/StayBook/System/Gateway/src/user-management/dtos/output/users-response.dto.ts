@@ -1,7 +1,7 @@
 import {
   PaginationMetaDto,
   PaginationResponseDto,
-} from '../../../shared/dtos/output/pagination-result.dto';
+} from '../../../core/dtos/output/pagination-result.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserResponseDto } from './user-response.dto';
 

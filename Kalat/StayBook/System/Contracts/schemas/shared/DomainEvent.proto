@@ -9,5 +9,5 @@ message DomainEvent {
   string aggregateId = 6;
   string aggregateType = 7;
   int32 version = 8;
-  bytes content = 9;
+  bytes payload = 9;
 }

@@ -7,5 +7,5 @@ message Command {
   string createdBy = 4;
   string metadata = 5;
   string correlationId = 6;
-  string payload = 7;
+  bytes payload = 7;
 }

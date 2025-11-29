@@ -4,8 +4,8 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "register": "tsx script/publish.ts",
-    "dev": "tsx --watch script/publish.ts"
+    "register": "tsx script/register.ts",
+    "register:dev": "tsx --watch script/register.ts"
   },
   "keywords": [],
   "author": "",

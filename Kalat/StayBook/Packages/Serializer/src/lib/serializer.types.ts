@@ -1,4 +1,10 @@
-export type RawData = { [key: string]: string | number | boolean | RawData | RawData[] };
+export type RawData = {
+  [key: string]: string | number | boolean | RawData | RawData[];
+};
+
+export type RawMetadata = {
+  [key: string]: string | number | boolean;
+};
 
 export interface RawBaseMessage {
   id: string;
@@ -6,14 +12,16 @@ export interface RawBaseMessage {
   createdAt: string;
   createdBy: string;
   metadata: string;
+  payload: Buffer;
 }
 
-export interface BaseMessage {
+export interface BaseMessage<T = unknown> {
   id: string;
   contentType: string;
   createdAt: Date;
   createdBy: string;
-  metadata: object;
+  metadata: RawMetadata;
+  payload: T;
 }
 
 export interface RawDomainEvent extends RawBaseMessage {
@@ -23,36 +31,31 @@ export interface RawDomainEvent extends RawBaseMessage {
   version: number;
 }
 
-export interface DomainEvent<TEvent> extends BaseMessage {
+export interface DomainEvent<TEvent = unknown> extends BaseMessage<TEvent> {
   aggregateId: string;
   aggregateType: string;
-  content: TEvent;
   version: number;
 }
 
 export interface RawActionMessage extends RawBaseMessage {
   correlationId: string;
-  payload: Buffer;
   replyTo: string;
 }
 
-export interface ActionMessage<Payload = unknown> extends BaseMessage {
+export interface ActionMessage<Payload = unknown> extends BaseMessage<Payload> {
   correlationId: string;
-  payload: Payload;
   replyTo: string;
 }
 
-export type CommandMessage<Payload> = ActionMessage<Payload>;
-export type QueryMessage<Payload> = ActionMessage<Payload>;
+export type CommandMessage<Payload = unknown> = ActionMessage<Payload>;
+export type QueryMessage<Payload = unknown> = ActionMessage<Payload>;
 
-export interface ReplyMessage<Payload> extends BaseMessage {
+export interface ReplyMessage<Payload = unknown> extends BaseMessage<Payload> {
   correlationId: string;
-  payload: Payload;
 }
 
 export interface RawReplyMessage extends RawBaseMessage {
   correlationId: string;
-  payload: Buffer;
 }
 
 export interface ErrorMessage extends BaseMessage {

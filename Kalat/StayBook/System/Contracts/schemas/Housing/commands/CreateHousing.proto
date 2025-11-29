@@ -1,5 +1,5 @@
 syntax = "proto3";
 
-message CreateHousingCommand {
+message CreateHousing {
   string title = 1;
 }

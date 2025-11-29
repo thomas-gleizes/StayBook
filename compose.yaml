@@ -46,13 +46,14 @@ services:
     volumes:
       - "./Kalat/StayBook/Modules/Housing:/usr/src/app"
       - "./Kalat/StayBook/Packages:/usr/src/packages"
-    command: sh -c "sleep infinity && pnpm start:dev"
+    command: sh -c "pnpm start:dev"
     networks:
       staybook-net:
         aliases:
           - modules.housing
     depends_on:
       - system_broker
+      - system_schema_registry
     env_file:
       - path: ./Kalat/StayBook/Modules/UserManagement/.env.default
         required: true
@@ -65,8 +66,9 @@ services:
       replicas: 1
     volumes:
       - "./Kalat/StayBook/System/Gateway:/usr/src/app"
+      - "./Kalat/StayBook/Packages:/usr/src/packages"
     working_dir: "/usr/src/app"
-    command: sh -c "pnpm install --frozen-lockfile && pnpm start:dev"
+    command: sh -c "pnpm install && pnpm start:dev"
     networks:
       staybook-net:
         aliases:
@@ -80,6 +82,8 @@ services:
       - "traefik.http.routers.system_gateway.rule=Host(`gateway.staybook.localhost`)"
       - "traefik.http.routers.system_gateway.entrypoints=web"
     env_file:
+      - path: ./Kalat/StayBook/System/Gateway/.env.default
+        required: true
       - path: ./Kalat/StayBook/System/Gateway/.env
         required: false
 
@@ -111,7 +115,7 @@ services:
       staybook-net:
         aliases:
           - system.schema-build
-    command: sh -c "sleep infinity && pnpm install --frozen-lockfile && pnpm run register"
+    command: sh -c "pnpm run register"
     working_dir: "/usr/src/app"
     volumes:
       - "./Kalat/StayBook/System/Contracts:/usr/src/app"
@@ -163,7 +167,7 @@ services:
   system_broker:
     image: apache/kafka:4.1.1
     volumes:
-      - kafka-data:/var/lib/kafka/data
+      - kafka-data:/var/lib/kafka-/data
     networks:
       staybook-net:
         aliases:
@@ -216,12 +220,25 @@ services:
       - postgres-volume:/var/lib/postgresql/data
       - ./.docker/postgres:/docker-entrypoint-initdb.d
 
-  system_http_client:
-    image: jetbrains/intellij-http-client
-    command: request.http
+  #  system_http_client:
+  #    image: jetbrains/intellij-http-client
+  #    #    command: request.http
+  #    #    volumes:
+  #    #      - ./request.http:/request.http
+  #    working_dir: /
+  #    networks:
+  #      staybook-net:
+
+  system_init_topics:
+    image: apache/kafka:4.1.1
+    command: sh -c '/usr/local/bin/init_topics.sh'
     volumes:
-      - ./request.http:/request.http
-    working_dir: /
+      - "./.docker/kafka/init_topics.sh:/usr/local/bin/init_topics.sh"
     networks:
       staybook-net:
-
+    environment:
+      KAFKA_BROKER: system.broker:9092
+      KAFKA_PARTITIONS: 30
+      KAFKA_REPLICATION: 1
+    depends_on:
+      - system_broker

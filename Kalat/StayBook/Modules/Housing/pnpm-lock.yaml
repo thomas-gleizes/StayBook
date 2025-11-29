@@ -26,9 +26,9 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.0.1
         version: 11.1.9(@nestjs/common@11.1.9(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.9)
-      '@staybook/seralizer':
-        specifier: ../../Packages/Seralizer
-        version: link:../../Packages/Seralizer
+      '@staybook/serializer':
+        specifier: file:/usr/src/packages/Serializer
+        version: file:../packages/Serializer
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -773,6 +773,9 @@ packages:
 
   '@sinonjs/fake-timers@13.0.5':
     resolution: {integrity: sha512-36/hTbH2uaWuGVERyC6da9YwGWnzUZXuPro/F2LfsdOsLnCojz/iSH8MxUt/FD2S5XBSVPhmArFUXcpCQ2Hkiw==}
+
+  '@staybook/serializer@file:../packages/Serializer':
+    resolution: {directory: ../packages/Serializer, type: directory}
 
   '@tokenizer/inflate@0.3.1':
     resolution: {integrity: sha512-4oeoZEBQdLdt5WmP/hx1KZ6D3/Oid/0cUb2nk4F0pTDAWy+KCH3/EnAkZF/bvckWo8I33EqBm01lIPgmgc8rCA==}
@@ -3609,6 +3612,10 @@ snapshots:
   '@sinonjs/fake-timers@13.0.5':
     dependencies:
       '@sinonjs/commons': 3.0.1
+
+  '@staybook/serializer@file:../packages/Serializer':
+    dependencies:
+      '@kafkajs/confluent-schema-registry': 3.9.0
 
   '@tokenizer/inflate@0.3.1':
     dependencies:

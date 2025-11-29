@@ -13,25 +13,16 @@ import {
   ApiAcceptedResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
-import { KafkaProducer } from '../shared/kafka/kafka.producer';
-import {
-  CommandMessage,
-  QueryMessage,
-} from '../shared/kafka/kafka-message.interface';
 import { CreateUserBodyDto } from './dtos/input/create-user-body.dto';
-import {
-  APP_NAME,
-  ORG_NAME,
-  SERVICE_NOMENCLATURE,
-} from '../shared/config/constants';
+import { APP_NAME, ORG_NAME } from '../core/config/constants';
 import { UsersResponseDto } from './dtos/output/users-response.dto';
 import { EditUserBodyDto } from './dtos/input/edit-user-body.dto';
 
 @Controller()
+@ApiTags('UserManagement')
 export class UserManagementController {
-  constructor(private readonly producer: KafkaProducer) {}
-
   @Get('users')
   @ApiOperation({ summary: 'Retrieve all users' })
   @ApiOkResponse({ type: UsersResponseDto })
@@ -45,25 +36,6 @@ export class UserManagementController {
   @ApiAcceptedResponse()
   async create(@Body() body: CreateUserBodyDto) {
     const topic = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1.command.CreateUserCommand`;
-
-    const command: CommandMessage<any> = {
-      id: randomUUID(),
-      correlation_id: randomUUID(),
-      payload: { input: body.toMessage() },
-      content_type: topic,
-      metadata: {
-        tenant_id: randomUUID(),
-      },
-      created_by: SERVICE_NOMENCLATURE,
-      created_at: new Date().toISOString(),
-      reply_to: `${topic}.reply`,
-    };
-
-    await this.producer.produce<CommandMessage<any>>(
-      topic,
-      command,
-      command.correlation_id,
-    );
   }
 
   @Patch('users/:id')
@@ -72,24 +44,6 @@ export class UserManagementController {
   @ApiAcceptedResponse()
   async edit(@Param('id') userId: string, @Body() body: EditUserBodyDto) {
     const topic = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1.command.EditUserCommand`;
-
-    const command: CommandMessage<any> = {
-      id: randomUUID(),
-      correlation_id: randomUUID(),
-      payload: {
-        userId: userId,
-        input: body.toMessage(),
-      },
-      content_type: topic,
-      metadata: {
-        tenant_id: randomUUID(),
-      },
-      created_by: SERVICE_NOMENCLATURE,
-      created_at: new Date().toISOString(),
-      reply_to: `${topic}.reply`,
-    };
-
-    await this.producer.produce<CommandMessage<any>>(topic, command, userId);
   }
 
   @Get('/users/:id')
@@ -98,22 +52,5 @@ export class UserManagementController {
   @ApiOkResponse()
   async findById(@Param('id') userId: string) {
     const topic = `${ORG_NAME}.${APP_NAME}.Modules.UserManagement.v1.query.FindUserQuery`;
-
-    const query: QueryMessage<any> = {
-      id: randomUUID(),
-      correlation_id: randomUUID(),
-      payload: {
-        userId: userId,
-      },
-      content_type: topic,
-      metadata: {
-        tenant_id: randomUUID(),
-      },
-      created_by: SERVICE_NOMENCLATURE,
-      created_at: new Date().toISOString(),
-      reply_to: `${topic}.reply`,
-    };
-
-    await this.producer.produce<QueryMessage<any>>(topic, query, userId);
   }
 }

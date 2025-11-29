@@ -3,25 +3,21 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ConsoleLogger, ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { environment } from './core/config/environment';
+import { KafkaDeserializer } from './core/kafka/kafka-deserializer';
 import {
   SERVICE_NAME,
-  SERVICE_NOMENCLATURE,
+  SERVICE_FQN,
   SERVICE_VERSION,
-} from './shared/config/constants';
-import { getEnvironment } from './shared/config/environment';
+} from './core/config/constants';
 
 async function bootstrap() {
-  const environment = getEnvironment(process.env);
-
   const app = await NestFactory.create(AppModule, {
     logger: new ConsoleLogger({
-      prefix: SERVICE_NOMENCLATURE,
+      prefix: SERVICE_FQN,
       logLevels: environment.LOG_LEVEL,
     }),
   });
-  const config = app.get(ConfigService);
-
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   const openapi = new DocumentBuilder()
@@ -31,6 +27,7 @@ async function bootstrap() {
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, openapi);
+
   SwaggerModule.setup('swagger', app, documentFactory, {
     raw: true,
     jsonDocumentUrl: '/openapi.json',
@@ -40,17 +37,14 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,
     options: {
-      client: {
-        brokers: config.getOrThrow('KAFKA_BROKERS'),
-      },
-      consumer: {
-        groupId: SERVICE_NOMENCLATURE,
-      },
+      client: { brokers: environment.KAFKA_BROKERS },
+      consumer: { groupId: SERVICE_FQN },
+      deserializer: new KafkaDeserializer(),
     },
   });
 
+  await app.listen(environment.PORT);
   await app.startAllMicroservices();
-  await app.listen(config.getOrThrow('PORT'));
 }
 
 void bootstrap();

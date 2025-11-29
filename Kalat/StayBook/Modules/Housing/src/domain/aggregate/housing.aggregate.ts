@@ -5,8 +5,22 @@ import { HousingCreatedEvent } from '../events/housing-created.event';
 export class HousingAggregate extends AggregateRoot {
   private _id: HousingId;
 
-  static create(id: HousingId) {
+  getAggregateId(): string {
+    return this._id.getValue();
+  }
+
+  constructor() {
+    super();
+  }
+
+  static create(id: HousingId): HousingAggregate {
+    const aggregate = new HousingAggregate();
+
+    aggregate._id = id;
+
     this.apply(new HousingCreatedEvent(id.getValue()));
+
+    return aggregate;
   }
 
   onHousingCreatedEvent(event: HousingCreatedEvent) {
